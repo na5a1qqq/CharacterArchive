@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐릭터 아카이브</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF6EE;--panel:#F3EBD8;--panel2:#EDE0C8;--border:rgba(196,152,106,0.3);
+  --gold:#A86848;--gold-lt:#C4986A;--gold-dim:rgba(196,152,106,0.12);
+  --text:#2A2018;--text-muted:#6A5040;--text-dim:#9A8878;--red:#A83030;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Serif KR',serif;font-size:14px;overflow:hidden}
+#app{display:grid;grid-template-columns:230px 1fr;height:100vh}
+#sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#sidebar-top{padding:14px 12px 10px;border-bottom:1px solid var(--border)}
+#sidebar-title{font-family:'IM Fell English',serif;font-size:19px;color:var(--gold);font-style:italic;margin-bottom:10px}
+#search{width:100%;background:#fff;border:1px solid var(--border);border-radius:4px;padding:6px 9px;font-size:12px;color:var(--text);font-family:'Noto Serif KR',serif}
+#search:focus{outline:none;border-color:var(--gold)}
+#search::placeholder{color:var(--text-dim)}
+#add-btn{margin-top:7px;width:100%;padding:7px;background:var(--gold);border:none;border-radius:4px;color:#fff;font-size:11px;letter-spacing:2px;cursor:pointer;font-family:'Noto Serif KR',serif;transition:all .2s}
+#add-btn:hover{background:var(--gold-lt)}
+#char-list{flex:1;overflow-y:auto;padding:6px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.char-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-bottom:3px;transition:all .15s}
+.char-item:hover{background:var(--panel2);border-color:var(--border)}
+.char-item.active{background:var(--gold-dim);border-color:rgba(196,152,106,0.5)}
+.char-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;color:#fff;overflow:hidden;background:var(--panel2)}
+.char-avatar img{width:100%;height:100%;object-fit:cover}
+.char-info{flex:1;min-width:0}
+.char-name{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.char-type{font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-top:1px}
+.char-del{opacity:0;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;flex-shrink:0}
+.char-item:hover .char-del{opacity:1}
+.char-del:hover{color:var(--red)}
+#io-bar{padding:8px 10px;border-top:1px solid var(--border);display:flex;gap:5px;background:var(--panel);flex-shrink:0}
+.io-btn{font-size:10px;padding:4px 9px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text-muted);cursor:pointer;font-family:'Noto Serif KR',serif;transition:all .15s}
+.io-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+#main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+#main-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+#main-tabs::-webkit-scrollbar{display:none}
+.mtab{padding:11px 14px;font-size:10px;letter-spacing:1.5px;cursor:pointer;color:var(--text-dim);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.mtab:hover{color:var(--text-muted)}
+.mtab.active{color:var(--gold);border-bottom-color:var(--gold)}
+#empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-dim)}
+#empty-icon{font-family:'IM Fell English',serif;font-size:52px;color:rgba(196,152,106,0.2);font-style:italic}
+#empty p{font-size:12px;letter-spacing:1.5px}
+.tab-panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.tab-panel.active{display:flex}
+
+/* 공통 */
+.tab-toolbar{padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.tool-label{font-size:10px;color:var(--text-muted);letter-spacing:1px}
+.tool-add-btn{font-size:11px;padding:5px 11px;background:var(--gold);border:none;border-radius:4px;color:#fff;cursor:pointer;font-family:'Noto Serif KR',serif;transition:all .2s;flex-shrink:0}
+.tool-add-btn:hover{background:var(--gold-lt)}
+.tool-add-btn.secondary{background:var(--panel2);color:var(--text-muted);border:1px solid var(--border)}
+.tool-add-btn.secondary:hover{background:var(--panel);border-color:var(--gold);color:var(--gold)}
+.field-box{background:#fff;border:1px solid var(--border);border-radius:4px;padding:9px 11px}
+.field-label{font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;font-weight:300}
+.field-input{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);font-family:'Noto Serif KR',serif;resize:none}
+.field-input:focus{outline:none}
+.field-input::placeholder{color:var(--text-dim)}
+.field-box.wide{grid-column:1/-1}
+textarea.field-input{min-height:52px;line-height:1.7}
+.section-label{font-size:10px;letter-spacing:3px;color:var(--text-dim);margin-bottom:8px;margin-top:16px;font-weight:300;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fields-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+
+/* ── 프로필 ── */
+#tab-profile{overflow-y:auto;padding:20px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.profile-header{display:flex;align-items:flex-start;gap:18px;margin-bottom:4px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.avatar-wrap{flex-shrink:0}
+.profile-avatar-big{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600;color:#fff;overflow:hidden;border:2px solid var(--border);background:var(--panel2)}
+.profile-avatar-big img{width:100%;height:100%;object-fit:cover}
+.avatar-btns{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.avatar-sm-btn{font-size:9px;padding:2px 7px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text-muted);cursor:pointer;font-family:'Noto Serif KR',serif;transition:all .15s}
+.avatar-sm-btn:hover{border-color:var(--gold);color:var(--gold)}
+.avatar-sm-btn.del:hover{border-color:var(--red);color:var(--red)}
+.profile-title-wrap{flex:1;min-width:0}
+.profile-name-input{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;font-family:'IM Fell English',serif;font-size:26px;color:var(--text);font-style:italic;padding:0 0 2px;margin-bottom:7px;transition:border-color .2s}
+.profile-name-input:focus{outline:none;border-bottom-color:var(--gold)}
+.profile-name-input::placeholder{color:var(--text-dim)}
+.profile-sub-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.ptag-select{background:#fff;border:1px solid var(--border);border-radius:3px;padding:4px 7px;font-size:11px;color:var(--text-muted);font-family:'Noto Serif KR',serif;cursor:pointer}
+.ptag-select:focus{outline:none;border-color:var(--gold)}
+.ptag-input{background:#fff;border:1px solid var(--border);border-radius:3px;padding:4px 7px;font-size:11px;color:var(--text-muted);font-family:'Noto Serif KR',serif;width:130px}
+.ptag-input:focus{outline:none;border-color:var(--gold)}
+.palette-wrap{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.palette-swatch{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,0.8);box-shadow:0 0 0 1px var(--border);position:relative;transition:transform .15s;flex-shrink:0}
+.palette-swatch:hover{transform:scale(1.15)}
+.palette-swatch .sw-del{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;opacity:0;background:rgba(0,0,0,0.4);border-radius:50%}
+.palette-swatch:hover .sw-del{opacity:1}
+.palette-add-btn{width:20px;height:20px;border-radius:50%;border:1px dashed var(--border);background:transparent;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-dim);cursor:pointer;line-height:1;flex-shrink:0}
+.palette-add-btn:hover{border-color:var(--gold);color:var(--gold)}
+/* 테마곡 (프로필 내) */
+.theme-songs-wrap{margin-top:8px}
+.theme-song-row{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+.theme-song-row input{background:#fff;border:1px solid var(--border);border-radius:3px;padding:4px 7px;font-size:11px;color:var(--text);font-family:'Noto Serif KR',serif}
+.theme-song-row input:focus{outline:none;border-color:var(--gold)}
+.theme-song-row input.song-title{flex:2}
+.theme-song-row input.song-artist{flex:1.2}
+.theme-song-row input.song-url{flex:2;color:var(--text-dim)}
+.theme-song-link{font-size:10px;padding:3px 7px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text-muted);text-decoration:none;white-space:nowrap;display:none}
+.theme-song-link.show{display:inline-flex;align-items:center}
+.theme-song-link:hover{border-color:var(--red);color:var(--red)}
+.theme-song-del{font-size:13px;color:var(--text-dim);cursor:pointer;padding:1px 4px;flex-shrink:0}
+.theme-song-del:hover{color:var(--red)}
+.theme-add-btn{font-size:10px;padding:3px 9px;border:1px dashed var(--border);border-radius:3px;background:transparent;color:var(--text-dim);cursor:pointer;font-family:'Noto Serif KR',serif;transition:all .15s;margin-top:2px}
+.theme-add-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── 심리 탭 ── */
+#tab-relation-pattern{overflow-y:auto;padding:20px;scrollbar-width:thin}
+.psych-section{margin-bottom:20px}
+.psych-section-title{font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;font-weight:400;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.psych-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.psych-grid.col1{grid-template-columns:1fr}
+
+/* ── 설정 메모 ── */
+#memo-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.tag-pill{font-size:10px;padding:3px 9px;border:1px solid var(--border);border-radius:100px;cursor:pointer;color:var(--text-dim);background:#fff;transition:all .15s;letter-spacing:1px}
+.tag-pill:hover{border-color:var(--gold);color:var(--gold)}
+.tag-pill.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
+.memo-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;position:relative;border-left:3px solid var(--gold)}
+.memo-card-top{display:flex;gap:7px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.memo-card-tag{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:100px;flex-shrink:0;white-space:nowrap}
+.memo-card-title{flex:1;min-width:80px;background:transparent;border:none;font-size:13px;font-weight:600;color:var(--text);font-family:'Noto Serif KR',serif}
+.memo-card-title:focus{outline:none}
+.memo-card-title::placeholder{color:var(--text-dim);font-weight:300}
+.memo-card-del{opacity:0;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;flex-shrink:0}
+.memo-card:hover .memo-card-del{opacity:1}
+.memo-card-del:hover{color:var(--red)}
+.memo-card-text{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);line-height:1.8;resize:none;font-family:'Noto Serif KR',serif}
+.memo-card-text:focus{outline:none}
+.memo-card-text::placeholder{color:var(--text-dim)}
+.memo-card-source{width:100%;background:transparent;border:none;font-size:10px;color:var(--text-dim);font-family:'Noto Serif KR',serif;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)}
+.memo-card-source:focus{outline:none}
+.memo-card-source::placeholder{color:var(--text-dim)}
+.memo-link-wrap{margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.memo-link-label{font-size:9px;letter-spacing:1.5px;color:var(--text-dim)}
+.memo-link-chip{font-size:10px;padding:1px 7px;border-radius:100px;background:var(--gold-dim);color:var(--gold);cursor:pointer;border:1px solid rgba(196,152,106,0.3)}
+.memo-link-add{font-size:9px;padding:1px 7px;border:1px dashed var(--border);border-radius:100px;background:transparent;color:var(--text-dim);cursor:pointer;font-family:'Noto Serif KR',serif}
+.memo-link-add:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── 이미지 갤러리 ── */
+#gallery-grid{flex:1;overflow-y:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;align-content:start;scrollbar-width:thin}
+.gallery-item{position:relative;border:1px solid var(--border);border-radius:4px;overflow:hidden;background:var(--panel2);aspect-ratio:1}
+.gallery-item img{width:100%;height:100%;object-fit:cover;display:block}
+.gallery-item-del{position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(168,48,48,0.85);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;opacity:0;transition:opacity .15s}
+.gallery-item:hover .gallery-item-del{opacity:1}
+
+/* ── 타임라인 ── */
+#timeline-list{flex:1;overflow-y:auto;padding:16px 24px;scrollbar-width:thin}
+.tl-item{display:flex;gap:14px;position:relative;padding-bottom:18px}
+.tl-item:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:16px}
+.tl-dot{width:14px;height:14px;border-radius:50%;background:var(--gold);border:2px solid #fff;box-shadow:0 0 0 2px var(--border);flex-shrink:0;margin-top:3px;cursor:pointer;transition:transform .15s}
+.tl-dot:hover{transform:scale(1.2)}
+.tl-color-picker{position:absolute;top:20px;left:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px;display:flex;gap:4px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.tl-color-btn{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.tl-color-btn:hover{transform:scale(1.2);border-color:rgba(0,0,0,0.2)}
+.tl-line{flex:1;width:1px;background:var(--border);margin:4px 0}
+.tl-item:last-child .tl-line{display:none}
+.tl-right{flex:1;min-width:0}
+.tl-date-input{background:transparent;border:none;font-size:10px;letter-spacing:2px;color:var(--gold);font-family:'Noto Serif KR',serif;margin-bottom:3px;width:100%}
+.tl-date-input:focus{outline:none}
+.tl-date-input::placeholder{color:var(--text-dim)}
+.tl-title-input{background:transparent;border:none;font-size:14px;font-weight:600;color:var(--text);font-family:'Noto Serif KR',serif;width:100%;margin-bottom:4px}
+.tl-title-input:focus{outline:none}
+.tl-title-input::placeholder{color:var(--text-dim);font-weight:300}
+.tl-desc-input{background:transparent;border:none;font-size:12px;color:var(--text-muted);line-height:1.7;resize:none;font-family:'Noto Serif KR',serif;width:100%}
+.tl-desc-input:focus{outline:none}
+.tl-desc-input::placeholder{color:var(--text-dim)}
+.tl-del{position:absolute;top:0;right:0;font-size:12px;color:var(--text-dim);cursor:pointer;padding:2px 5px;opacity:0}
+.tl-item:hover .tl-del{opacity:1}
+.tl-del:hover{color:var(--red)}
+
+/* ── 대사 ── */
+#quotes-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.quote-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 16px;position:relative;border-left:3px solid var(--gold-lt)}
+.quote-card:hover .quote-del{opacity:1}
+.quote-cat-select{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:10px;color:var(--text-dim);font-family:'Noto Serif KR',serif;margin-bottom:6px;cursor:pointer}
+.quote-cat-select:focus{outline:none;border-color:var(--gold)}
+.quote-text{width:100%;background:transparent;border:none;font-family:'IM Fell English',serif;font-size:15px;font-style:italic;color:var(--text);line-height:1.8;resize:none;margin-bottom:4px}
+.quote-text:focus{outline:none}
+.quote-text::placeholder{color:var(--text-dim);font-style:italic}
+.quote-context{width:100%;background:transparent;border:none;font-size:11px;color:var(--text-dim);font-family:'Noto Serif KR',serif;resize:none}
+.quote-context:focus{outline:none}
+.quote-context::placeholder{color:var(--text-dim)}
+.quote-del{position:absolute;top:8px;right:8px;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;opacity:0}
+.quote-del:hover{color:var(--red)}
+
+/* ── 드관 ── */
+#pairs-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+.pair-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px 16px;position:relative}
+.pair-card{border-left:3px solid #6a9ac4}
+.pair-card:hover .pair-del{opacity:1}
+.pair-card-header{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.pair-type-badge{font-size:9px;padding:2px 8px;border-radius:100px;letter-spacing:1px;flex-shrink:0}
+.pair-type-badge.dg{background:#d0e0f4;color:#2050a0}
+.pair-title-input{font-family:'IM Fell English',serif;font-size:16px;font-style:italic;color:var(--text);background:transparent;border:none;flex:1;min-width:80px}
+.pair-title-input:focus{outline:none}
+.pair-title-input::placeholder{color:var(--text-dim);font-weight:300}
+.pair-del{opacity:0;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;position:absolute;top:10px;right:10px}
+.pair-del:hover{color:var(--red)}
+.pair-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pair-field-box{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:8px 10px}
+.pair-field-label{font-size:9px;letter-spacing:1.5px;color:var(--text-dim);margin-bottom:3px;font-weight:300}
+.pair-field-input{width:100%;background:transparent;border:none;font-size:12px;color:var(--text);font-family:'Noto Serif KR',serif;resize:none;line-height:1.6}
+.pair-field-input:focus{outline:none}
+.pair-field-input::placeholder{color:var(--text-dim)}
+.pair-field-box.span2{grid-column:1/-1}
+
+/* ── 드림 썰 ── */
+#dream-wrap{flex:1;display:flex;overflow:hidden}
+#dream-sidebar{width:175px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+#dream-folder-list{flex:1;overflow-y:auto;padding:6px;scrollbar-width:thin}
+.dream-folder{display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;font-size:12px;color:var(--text);transition:all .15s}
+.dream-folder:hover{background:var(--panel2);border-color:var(--border)}
+.dream-folder.active{background:var(--gold-dim);border-color:rgba(196,152,106,0.5)}
+.dream-folder-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dream-folder-del{opacity:0;font-size:12px;color:var(--text-dim);cursor:pointer;padding:1px 4px;flex-shrink:0}
+.dream-folder:hover .dream-folder-del{opacity:1}
+.dream-folder-del:hover{color:var(--red)}
+#dream-folder-add-wrap{padding:8px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:5px}
+#dream-folder-name-input{flex:1;background:#fff;border:1px solid var(--border);border-radius:3px;padding:5px 7px;font-size:11px;color:var(--text);font-family:'Noto Serif KR',serif}
+#dream-folder-name-input:focus{outline:none;border-color:var(--gold)}
+#dream-folder-add-btn{padding:5px 8px;background:var(--gold);border:none;border-radius:3px;color:#fff;font-size:11px;cursor:pointer;font-family:'Noto Serif KR',serif}
+#dream-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#dream-content-toolbar{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;gap:6px;align-items:center;flex-shrink:0}
+#dream-stories-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.story-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;position:relative}
+.story-card:hover .story-del{opacity:1}
+.story-card-top{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.story-title-input{flex:1;font-size:13px;font-weight:600;color:var(--text);background:transparent;border:none;font-family:'Noto Serif KR',serif}
+.story-title-input:focus{outline:none}
+.story-title-input::placeholder{color:var(--text-dim);font-weight:300}
+.story-date{font-size:10px;color:var(--text-dim);flex-shrink:0}
+.story-del{opacity:0;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;position:absolute;top:8px;right:8px}
+.story-del:hover{color:var(--red)}
+.story-text{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);line-height:1.8;resize:none;font-family:'Noto Serif KR',serif}
+.story-text:focus{outline:none}
+.story-text::placeholder{color:var(--text-dim)}
+
+/* ── 관계도 ── */
+.rel-toolbar{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;background:var(--panel);flex-shrink:0;flex-wrap:wrap}
+.rel-legend-wrap{padding:6px 14px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-shrink:0;min-height:32px}
+.rel-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted)}
+.rel-legend-line{width:20px;height:2px;border-radius:1px}
+#rel-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#rel-canvas{width:100%;height:100%;cursor:grab;display:block}
+#rel-canvas.dragging{cursor:grabbing}
+#rel-table-wrap{flex:1;overflow-y:auto;padding:0 14px 14px;display:none}
+.rel-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.rel-table th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:2px;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:300}
+.rel-table td{padding:8px 10px;border-bottom:1px solid rgba(196,152,106,0.1);color:var(--text)}
+.rel-table tr:hover td{background:var(--gold-dim)}
+.rel-tag{font-size:10px;padding:2px 7px;border-radius:100px;background:var(--gold-dim);color:var(--gold)}
+.rel-ext-badge{font-size:9px;padding:1px 5px;border-radius:100px;background:#eee;color:#888;margin-left:3px}
+.del-rel{color:var(--text-dim);cursor:pointer;font-size:13px;padding:1px 4px;opacity:0}
+.rel-table tr:hover .del-rel{opacity:1}
+.del-rel:hover{color:var(--red)}
+.rel-section-head{font-size:9px;letter-spacing:2px;color:var(--text-dim);padding:10px 10px 4px;font-weight:300}
+
+
+/* 페어링 2단 레이아웃 */
+#pairs-wrap{display:flex;flex:1;overflow:hidden}
+#pairs-left{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+#pairs-list-nav{flex:1;overflow-y:auto;padding:6px;scrollbar-width:thin}
+.pair-nav-item{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:all .15s}
+.pair-nav-item:hover{background:var(--panel2);border-color:var(--border)}
+.pair-nav-item.active{background:var(--gold-dim);border-color:rgba(196,152,106,0.5)}
+.pair-nav-name{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pair-nav-del{opacity:0;font-size:12px;color:var(--text-dim);cursor:pointer;padding:1px 4px;flex-shrink:0}
+.pair-nav-item:hover .pair-nav-del{opacity:1}
+.pair-nav-del:hover{color:var(--red)}
+#pairs-left-bottom{padding:7px;border-top:1px solid var(--border);display:flex;gap:5px;flex-shrink:0}
+#pairs-content{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin}
+.pair-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text-dim);font-size:12px;letter-spacing:1px;height:100%}
+.pair-detail-header{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.pair-detail-name-input{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;font-family:'IM Fell English',serif;font-size:22px;color:var(--text);font-style:italic;padding:0 0 2px;transition:border-color .2s;margin-bottom:4px}
+.pair-detail-name-input:focus{outline:none;border-bottom-color:var(--gold)}
+.pair-detail-name-input::placeholder{color:var(--text-dim)}
+.pair-detail-fields{display:flex;flex-direction:column;gap:9px}
+.pair-field-box{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:9px 11px}
+.pair-field-label{font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;font-weight:300}
+.pair-field-input{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);font-family:'Noto Serif KR',serif;resize:none;line-height:1.7}
+.pair-field-input:focus{outline:none}
+.pair-field-input::placeholder{color:var(--text-dim)}
+
+
+.gallery-item-btns{position:absolute;bottom:0;left:0;right:0;display:flex;gap:0;opacity:0;transition:opacity .15s}
+.gallery-item:hover .gallery-item-btns{opacity:1}
+.gallery-item-btn{flex:1;padding:5px;background:rgba(42,32,24,0.7);color:#fff;border:none;cursor:pointer;font-size:10px;font-family:'Noto Serif KR',serif;transition:background .15s}
+.gallery-item-btn:hover{background:rgba(42,32,24,0.9)}
+/* 이미지 라이트박스 */
+#img-lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:9998;flex-direction:column;gap:12px}
+#img-lightbox img{max-width:90vw;max-height:80vh;object-fit:contain;border-radius:4px}
+#img-lightbox-btns{display:flex;gap:10px}
+.lb-btn{padding:7px 16px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;background:transparent;color:#fff;cursor:pointer;font-size:12px;font-family:'Noto Serif KR',serif;transition:all .2s}
+.lb-btn:hover{background:rgba(255,255,255,0.15)}
+
+
+/* ── 스토리 ── */
+#story-wrap{flex:1;display:flex;overflow:hidden}
+#story-sidebar{width:190px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+#story-folder-list{flex:1;overflow-y:auto;padding:6px;scrollbar-width:thin}
+.story-folder-item{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;font-size:12px;color:var(--text);transition:all .15s}
+.story-folder-item:hover{background:var(--panel2);border-color:var(--border)}
+.story-folder-item.active{background:var(--gold-dim);border-color:rgba(196,152,106,0.5)}
+.story-folder-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story-folder-item-del{opacity:0;font-size:12px;color:var(--text-dim);cursor:pointer;padding:1px 4px;flex-shrink:0}
+.story-folder-item:hover .story-folder-item-del{opacity:1}
+.story-folder-item-del:hover{color:var(--red)}
+#story-folder-add-wrap{padding:7px;border-top:1px solid var(--border);display:flex;gap:5px;flex-shrink:0}
+#story-folder-name-input{flex:1;background:#fff;border:1px solid var(--border);border-radius:3px;padding:5px 7px;font-size:11px;color:var(--text);font-family:'Noto Serif KR',serif}
+#story-folder-name-input:focus{outline:none;border-color:var(--gold)}
+#story-folder-add-btn{padding:5px 9px;background:var(--gold);border:none;border-radius:3px;color:#fff;cursor:pointer;font-size:12px}
+#story-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#story-content-toolbar{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;gap:6px;align-items:center;flex-shrink:0}
+#story-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+.story-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px 16px;position:relative}
+.story-card:hover .story-card-del{opacity:1}
+.story-card-del{position:absolute;top:10px;right:10px;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;opacity:0}
+.story-card-del:hover{color:var(--red)}
+.story-card-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.story-card-title{flex:2;min-width:120px;background:transparent;border:none;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;color:var(--text);font-family:'Noto Serif KR',serif;padding-bottom:3px}
+.story-card-title:focus{outline:none;border-bottom-color:var(--gold)}
+.story-card-title::placeholder{color:var(--text-dim);font-weight:300}
+.story-card-genre{flex:1;min-width:80px;background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:4px 7px;font-size:11px;color:var(--text-muted);font-family:'Noto Serif KR',serif}
+.story-card-genre:focus{outline:none;border-color:var(--gold)}
+.story-card-genre::placeholder{color:var(--text-dim)}
+.story-card-chars{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:5px 8px;font-size:11px;color:var(--text-muted);font-family:'Noto Serif KR',serif;margin-bottom:8px}
+.story-card-chars:focus{outline:none;border-color:var(--gold)}
+.story-card-chars::placeholder{color:var(--text-dim)}
+.story-card-body{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);line-height:1.9;resize:none;font-family:'Noto Serif KR',serif}
+.story-card-body:focus{outline:none}
+.story-card-body::placeholder{color:var(--text-dim)}
+.story-empty{text-align:center;padding:40px;color:var(--text-dim);font-size:12px;letter-spacing:1px}
+
+
+#story-resize-handle{
+  position:absolute;top:0;right:-4px;width:8px;height:100%;
+  cursor:col-resize;z-index:10;
+}
+#story-resize-handle::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:2px;height:32px;background:var(--border);border-radius:1px;
+}
+#story-resize-handle:hover::after{background:var(--gold);}
+
+
+/* 썰 카드 */
+.dream-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px 16px;position:relative;border-left:3px solid var(--gold)}
+.dream-card:hover .dream-card-del{opacity:1}
+.dream-card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.dream-card-tag{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:100px;flex-shrink:0}
+.dream-card-title{flex:1;min-width:80px;background:transparent;border:none;font-size:13px;font-weight:600;color:var(--text);font-family:'Noto Serif KR',serif}
+.dream-card-title:focus{outline:none}
+.dream-card-title::placeholder{color:var(--text-dim);font-weight:300}
+.dream-card-date{font-size:10px;color:var(--text-dim);flex-shrink:0}
+.dream-card-del{opacity:0;font-size:13px;color:var(--text-dim);cursor:pointer;padding:2px 5px;flex-shrink:0}
+.dream-card-del:hover{color:var(--red)}
+.dream-card-text{width:100%;background:transparent;border:none;font-size:13px;color:var(--text);line-height:1.8;resize:none;font-family:'Noto Serif KR',serif}
+.dream-card-text:focus{outline:none}
+.dream-card-text::placeholder{color:var(--text-dim)}
+
+/* 모달 */
+#modal-overlay{position:fixed;inset:0;background:rgba(42,32,24,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
+#modal{background:#fff;border:1px solid var(--border);border-radius:8px;padding:22px;min-width:340px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(42,32,24,0.12);max-height:90vh;overflow-y:auto}
+#modal h3{font-family:'IM Fell English',serif;font-size:19px;color:var(--gold);font-style:italic;margin-bottom:14px}
+.modal-field{margin-bottom:10px}
+.modal-field label{font-size:10px;letter-spacing:2px;color:var(--text-dim);display:block;margin-bottom:4px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:7px 9px;font-size:13px;color:var(--text);font-family:'Noto Serif KR',serif}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{outline:none;border-color:var(--gold)}
+.modal-field textarea{resize:vertical;min-height:56px;line-height:1.7}
+.modal-hint{font-size:10px;color:var(--text-dim);margin-top:3px}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.mbtn{padding:7px 16px;border-radius:4px;cursor:pointer;font-size:13px;font-family:'Noto Serif KR',serif;transition:all .2s;border:1px solid var(--border)}
+.mbtn.cancel{background:transparent;color:var(--text-muted)}
+.mbtn.cancel:hover{background:var(--panel)}
+.mbtn.confirm{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600}
+.mbtn.confirm:hover{background:var(--gold-lt)}
+#confirm-overlay{position:fixed;inset:0;background:rgba(42,32,24,0.45);display:none;align-items:center;justify-content:center;z-index:10000}
+#confirm-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:22px 26px;min-width:240px;text-align:center;box-shadow:0 8px 32px rgba(42,32,24,0.12)}
+#confirm-box p{font-size:13px;color:var(--text);margin-bottom:16px;line-height:1.6}
+.cbtn-row{display:flex;gap:8px;justify-content:center}
+.empty-msg{text-align:center;padding:40px;color:var(--text-dim);font-size:12px;letter-spacing:1px}
+</style>
+</head>
+<body>
+<input type="file" id="avatar-file-input" accept="image/*" style="display:none;position:absolute;visibility:hidden">
+<input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;position:absolute;visibility:hidden">
+<input type="color" id="palette-color-input" style="display:none;position:absolute;visibility:hidden">
+<input type="file" id="import-file-input" accept=".json" style="display:none;position:absolute;visibility:hidden">
+
+<div id="img-lightbox">
+  <img id="lb-img" src="" alt="">
+  <div id="img-lightbox-btns">
+    <button class="lb-btn" id="lb-download">다운로드</button>
+    <button class="lb-btn" id="lb-close">닫기</button>
+  </div>
+</div>
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <p id="confirm-msg"></p>
+    <div class="cbtn-row">
+      <button class="mbtn confirm" id="confirm-yes">삭제</button>
+      <button class="mbtn cancel" id="confirm-no">취소</button>
+    </div>
+  </div>
+</div>
+<div id="modal-overlay">
+  <div id="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" id="modal-cancel">취소</button>
+      <button class="mbtn confirm" id="modal-confirm">확인</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-top">
+      <div id="sidebar-title">Character Archive</div>
+      <input id="search" type="text" placeholder="이름으로 검색...">
+      <button id="add-btn">+ 캐릭터 추가</button>
+    </div>
+    <div id="char-list"></div>
+    <div id="io-bar">
+      <button class="io-btn" id="export-btn">💾 이 캐릭터 내보내기</button>
+      <button class="io-btn" id="import-btn">📂 캐릭터 불러오기</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="empty"><div id="empty-icon">✦</div><p>캐릭터를 선택하거나 추가하세요</p></div>
+    <div id="char-main" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div id="main-tabs">
+        <div class="mtab active" data-tab="profile">프로필</div>
+        <div class="mtab" data-tab="memo">설정 메모</div>
+        <div class="mtab" data-tab="relation-pattern">내면 · 심리</div>
+        <div class="mtab" data-tab="gallery">이미지 갤러리</div>
+        <div class="mtab" data-tab="timeline">타임라인</div>
+        <div class="mtab" data-tab="quotes">대사</div>
+        <div class="mtab" data-tab="dream">썰</div>
+        <div class="mtab" data-tab="story">스토리</div>
+        <div class="mtab" data-tab="relation">관계도</div>
+      </div>
+      <div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+
+        <!-- 프로필 -->
+        <div id="tab-profile" class="tab-panel active" style="overflow-y:auto;padding:20px;scrollbar-width:thin">
+          <div class="profile-header">
+            <div class="avatar-wrap">
+              <div class="profile-avatar-big" id="prof-avatar"></div>
+              <div class="avatar-btns">
+                <button class="avatar-sm-btn" id="avatar-edit-btn">변경</button>
+                <button class="avatar-sm-btn del" id="avatar-del-btn">삭제</button>
+              </div>
+            </div>
+            <div class="profile-title-wrap">
+              <input class="profile-name-input" id="prof-name" placeholder="캐릭터 이름" type="text">
+              <div class="profile-sub-row">
+                <select class="ptag-select" id="prof-type">
+                  <option value="드림주">드림주</option>
+                  <option value="OC">OC</option>
+                  <option value="기타">기타</option>
+                </select>
+                <input class="ptag-input" id="prof-genre" placeholder="장르 / 세계관" type="text">
+              </div>
+              <div style="font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:4px;font-weight:300">대표 컬러</div>
+              <div class="palette-wrap" id="palette-wrap">
+                <button class="palette-add-btn" id="palette-add-btn">+</button>
+              </div>
+              <div style="font-size:9px;letter-spacing:2px;color:var(--text-dim);margin:8px 0 4px;font-weight:300">테마곡 (최대 3곡)</div>
+              <div class="theme-songs-wrap" id="theme-songs-wrap"></div>
+              <button class="theme-add-btn" id="theme-add-btn">+ 곡 추가</button>
+            </div>
+          </div>
+
+          <div class="section-label">기본 정보</div>
+          <div class="fields-grid">
+            <div class="field-box"><div class="field-label">나이 / 생일</div><input class="field-input" id="pf-age" placeholder="나이 / 생일" type="text"></div>
+            <div class="field-box"><div class="field-label">성별</div><input class="field-input" id="pf-gender" placeholder="성별" type="text"></div>
+            <div class="field-box"><div class="field-label">직업 / 소속</div><input class="field-input" id="pf-job" placeholder="직업 / 소속" type="text"></div>
+            <div class="field-box"><div class="field-label">출처 / 세계관</div><input class="field-input" id="pf-world" placeholder="출처 / 세계관" type="text"></div>
+            <div class="field-box"><div class="field-label">국적 / 종족</div><input class="field-input" id="pf-race" placeholder="국적 / 종족" type="text"></div>
+            <div class="field-box"><div class="field-label">키 / 체형</div><input class="field-input" id="pf-body" placeholder="키 / 체형" type="text"></div>
+          </div>
+
+          <div class="section-label">성격 유형</div>
+          <div class="fields-grid-3">
+            <div class="field-box"><div class="field-label">MBTI</div><input class="field-input" id="pf-mbti" placeholder="MBTI" type="text"></div>
+            <div class="field-box"><div class="field-label">에니어그램</div><input class="field-input" id="pf-enneagram" placeholder="에니어그램" type="text"></div>
+            <div class="field-box"><div class="field-label">혈액형</div><input class="field-input" id="pf-blood" placeholder="혈액형" type="text"></div>
+          </div>
+
+          <div class="section-label">외형</div>
+          <div class="fields-grid">
+            <div class="field-box wide"><div class="field-label">전체 외형</div><textarea class="field-input" id="pf-appear" placeholder="머리색, 눈색, 전반적인 인상..."></textarea></div>
+            <div class="field-box"><div class="field-label">첫인상을 결정짓는 포인트</div><textarea class="field-input" id="pf-firstlook" placeholder="첫눈에 눈에 띄는 포인트"></textarea></div>
+            <div class="field-box"><div class="field-label">자주 짓는 표정 / 몸짓 버릇</div><textarea class="field-input" id="pf-habit" placeholder="무의식적인 동작, 자주 하는 표정"></textarea></div>
+            <div class="field-box"><div class="field-label">상처 / 신체적 특이점</div><textarea class="field-input" id="pf-scar" placeholder="흉터, 점, 신체적 특이점"></textarea></div>
+            <div class="field-box"><div class="field-label">즐겨 입는 스타일 / 애착 아이템</div><textarea class="field-input" id="pf-style" placeholder="자주 입는 옷 스타일, 항상 지니는 것"></textarea></div>
+            <div class="field-box"><div class="field-label">감정 격해질 때 몸/표정 변화</div><textarea class="field-input" id="pf-emotion" placeholder="감정이 격해질 때 몸이나 표정이 어떻게 변하는지"></textarea></div>
+          </div>
+
+          <div class="section-label">성격</div>
+          <div class="fields-grid">
+            <div class="field-box wide"><div class="field-label">전반적인 성격 / 말투</div><textarea class="field-input" id="pf-personality" placeholder="성격 특징, 말투, 버릇..."></textarea></div>
+            <div class="field-box"><div class="field-label">평소 모습 vs 본모습의 괴리</div><textarea class="field-input" id="pf-gap" placeholder="겉으로 보이는 모습과 실제가 다른 점"></textarea></div>
+            <div class="field-box"><div class="field-label">스트레스 상황에서의 반응</div><textarea class="field-input" id="pf-stress" placeholder="압박받거나 스트레스 받을 때 반응"></textarea></div>
+            <div class="field-box"><div class="field-label">타인에게 보이고 싶은 이미지</div><textarea class="field-input" id="pf-selfimage" placeholder="타인에게 원하는 자기 이미지"></textarea></div>
+            <div class="field-box"><div class="field-label">절대 양보 못 하는 것</div><textarea class="field-input" id="pf-nonneg" placeholder="절대 타협하지 않는 것"></textarea></div>
+            <div class="field-box"><div class="field-label">처음 만났을 때 vs 친해졌을 때</div><textarea class="field-input" id="pf-closediff" placeholder="낯선 사람 vs 친한 사람에게 다른 점"></textarea></div>
+          </div>
+
+          <div class="section-label">능력</div>
+          <div class="fields-grid">
+            <div class="field-box wide"><div class="field-label">주력 능력 / 기술</div><textarea class="field-input" id="pf-ability" placeholder="주력으로 사용하는 능력이나 기술"></textarea></div>
+            <div class="field-box"><div class="field-label">능력의 한계 / 대가</div><textarea class="field-input" id="pf-ablimit" placeholder="능력의 제한, 부작용, 대가"></textarea></div>
+            <div class="field-box"><div class="field-label">습득 경위</div><textarea class="field-input" id="pf-abhow" placeholder="어떻게 얻게 됐는지"></textarea></div>
+            <div class="field-box"><div class="field-label">잠재력 / 숨겨진 약점</div><textarea class="field-input" id="pf-abhidden" placeholder="아직 발현되지 않은 잠재력이나 약점"></textarea></div>
+            <div class="field-box"><div class="field-label">능력 사용 시 변화</div><textarea class="field-input" id="pf-abchange" placeholder="능력 사용 시 나타나는 신체적·감정적 변화"></textarea></div>
+          </div>
+
+          <div class="section-label">기타</div>
+          <div class="fields-grid">
+            <div class="field-box wide"><div class="field-label">좋아하는 것 / 싫어하는 것</div><textarea class="field-input" id="pf-likes" placeholder="좋아하는 것, 싫어하는 것, 취미..."></textarea></div>
+            <div class="field-box wide"><div class="field-label">기타 메모</div><textarea class="field-input" id="pf-etc" placeholder="비밀, 트리거, 특이사항..."></textarea></div>
+          </div>
+        </div>
+
+        <!-- 설정 메모 -->
+        <div id="tab-memo" class="tab-panel">
+          <div class="tab-toolbar" id="memo-toolbar">
+            <div class="tag-pill active" data-tag="전체" id="memo-tag-all">전체</div>
+            <button class="tool-add-btn" id="memo-add-btn" style="margin-left:auto">+ 메모 추가</button>
+          </div>
+          <div id="memo-list"></div>
+        </div>
+
+        <!-- 내면 · 심리 -->
+        <div id="tab-relation-pattern" class="tab-panel" style="overflow-y:auto;padding:20px;scrollbar-width:thin">
+          <div class="psych-section">
+            <div class="psych-section-title">내면 · 심리</div>
+            <div class="psych-grid">
+              <div class="field-box"><div class="field-label">진심으로 원하는 것</div><textarea class="field-input rp-field" data-rpf="rp_desire" placeholder="표면적 욕망 말고 깊은 곳의 욕구..." rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">가장 두려운 것</div><textarea class="field-input rp-field" data-rpf="rp_fear" placeholder="근본적인 두려움, 공포의 본질" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">자신에 대한 인식</div><textarea class="field-input rp-field" data-rpf="rp_selfview" placeholder="자신을 어떻게 바라보는지" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">감추고 있는 것 / 인정하기 싫은 것</div><textarea class="field-input rp-field" data-rpf="rp_hidden" placeholder="숨기거나 인정하기 싫은 것" rows="3"></textarea></div>
+              <div class="field-box" style="grid-column:1/-1"><div class="field-label">무언가를 포기한 경험과 현재 감정</div><textarea class="field-input rp-field" data-rpf="rp_gave_up" placeholder="무언가를 포기한 경험과 지금의 감정" rows="3"></textarea></div>
+            </div>
+          </div>
+          <div class="psych-section">
+            <div class="psych-section-title">대인관계 패턴</div>
+            <div class="psych-grid">
+              <div class="field-box"><div class="field-label">갈등 상황에서의 반응</div><textarea class="field-input rp-field" data-rpf="rp_conflict" placeholder="갈등 상황에서의 반응" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">연애 / 감정 표현 방식</div><textarea class="field-input rp-field" data-rpf="rp_love" placeholder="감정을 표현하는 방식" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">호감 / 비호감 유형</div><textarea class="field-input rp-field" data-rpf="rp_like_type" placeholder="호감 가는 유형, 불편한 유형" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">의존성 / 독립성</div><textarea class="field-input rp-field" data-rpf="rp_depend" placeholder="의존성과 독립성의 균형" rows="3"></textarea></div>
+              <div class="field-box" style="grid-column:1/-1"><div class="field-label">특이한 대인관계 패턴</div><textarea class="field-input rp-field" data-rpf="rp_special" placeholder="눈에 띄는 대인관계 특징" rows="3"></textarea></div>
+            </div>
+          </div>
+          <div class="psych-section">
+            <div class="psych-section-title">서사 · 과거</div>
+            <div class="psych-grid">
+              <div class="field-box"><div class="field-label">출생 배경</div><textarea class="field-input rp-field" data-rpf="rp_birth" placeholder="출생 환경, 가문, 사회적 신분" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">전환점 (삶의 방향이 바뀐 사건)</div><textarea class="field-input rp-field" data-rpf="rp_turning" placeholder="삶의 방향을 바꾼 결정적 순간" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">현재 처한 상황 및 목표</div><textarea class="field-input rp-field" data-rpf="rp_now" placeholder="현재 처한 상황과 목표" rows="3"></textarea></div>
+              <div class="field-box"><div class="field-label">과거의 선택과 그 결과</div><textarea class="field-input rp-field" data-rpf="rp_choice" placeholder="과거의 선택과 그 결과" rows="3"></textarea></div>
+              <div class="field-box" style="grid-column:1/-1"><div class="field-label">아직 해결되지 않은 관계</div><textarea class="field-input rp-field" data-rpf="rp_unresolved" placeholder="아직 해결되지 않은 과거의 관계" rows="3"></textarea></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 이미지 갤러리 -->
+        <div id="tab-gallery" class="tab-panel">
+          <div class="tab-toolbar">
+            <span class="tool-label">레퍼런스 이미지</span>
+            <button class="tool-add-btn" id="gallery-add-btn" style="margin-left:auto">+ 이미지 추가</button>
+          </div>
+          <div id="gallery-grid"><div class="empty-msg">이미지를 추가해보세요</div></div>
+        </div>
+
+        <!-- 타임라인 -->
+        <div id="tab-timeline" class="tab-panel">
+          <div class="tab-toolbar">
+            <span class="tool-label">주요 사건</span>
+            <button class="tool-add-btn" id="tl-add-btn" style="margin-left:auto">+ 사건 추가</button>
+          </div>
+          <div id="timeline-list"></div>
+        </div>
+
+        <!-- 대사 -->
+        <div id="tab-quotes" class="tab-panel">
+          <div class="tab-toolbar">
+            <span class="tool-label">말투 · 대사</span>
+            <button class="tool-add-btn" id="quotes-add-btn" style="margin-left:auto">+ 대사 추가</button>
+          </div>
+          <div id="quotes-list"></div>
+        </div>
+
+        <!-- 썰 -->
+        <div id="tab-dream" class="tab-panel">
+          <div class="tab-toolbar" id="dream-toolbar">
+            <div class="tag-pill active" id="dream-tag-all" data-tag="전체">전체</div>
+            <button class="tool-add-btn" id="dream-add-btn" style="margin-left:auto">+ 썰 추가</button>
+          </div>
+          <div id="dream-list" style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin"></div>
+        </div>
+
+        <!-- 스토리 -->
+        <div id="tab-story" class="tab-panel">
+          <div id="story-wrap">
+            <div id="story-sidebar" style="position:relative">
+              <div id="story-folder-list"></div>
+              <div id="story-folder-add-wrap">
+                <input id="story-folder-name-input" type="text" placeholder="폴더 이름">
+                <button id="story-folder-add-btn">+</button>
+              </div>
+            <div id="story-resize-handle"></div>
+            </div>
+            <div id="story-content">
+              <div id="story-content-toolbar">
+                <span class="tool-label" id="story-folder-title">폴더를 선택하세요</span>
+                <button class="tool-add-btn" id="story-add-btn" style="margin-left:auto;display:none">+ 스토리 추가</button>
+              </div>
+              <div id="story-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 관계도 -->
+        <div id="tab-relation" class="tab-panel">
+          <div class="rel-toolbar">
+            <span class="tool-label">보기</span>
+            <button class="rel-view-btn tag-pill active" data-view="graph">그래프</button>
+            <button class="rel-view-btn tag-pill" data-view="table">목록</button>
+            <button class="tool-add-btn" id="rel-add-my-btn" style="margin-left:auto">+ 내 캐릭터</button>
+            <button class="tool-add-btn secondary" id="rel-add-ext-btn">+ 외부 캐릭터</button>
+          </div>
+          <div class="rel-legend-wrap" id="rel-legend"></div>
+          <div id="rel-canvas-wrap"><canvas id="rel-canvas"></canvas></div>
+          <div id="rel-table-wrap">
+            <div class="rel-section-head">내 캐릭터</div>
+            <table class="rel-table"><thead><tr><th>상대</th><th>관계</th><th>설명</th><th></th></tr></thead><tbody id="rel-tbody-my"></tbody></table>
+            <div class="rel-section-head" style="margin-top:12px">외부 캐릭터</div>
+            <table class="rel-table"><thead><tr><th>이름</th><th>관계</th><th>설명</th><th></th></tr></thead><tbody id="rel-tbody-ext"></tbody></table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var COLORS=['#A86848','#3060A8','#308060','#703090','#A03070','#A87030','#308080','#607030'];
+var TAG_COLORS={};
+var TAG_PALETTE=['#A86848','#3060A8','#308060','#703090','#A03070','#A87030','#308080','#607030','#888888'];
+function getTagColor(tag){
+  if(!TAG_COLORS[tag]){
+    var usedColors=Object.values(TAG_COLORS);
+    var pick=TAG_PALETTE.find(function(c){return !usedColors.includes(c);})||TAG_PALETTE[Object.keys(TAG_COLORS).length%TAG_PALETTE.length];
+    TAG_COLORS[tag]=pick;
+  }
+  return TAG_COLORS[tag];
+}
+var TL_DOT_COLORS={초록:'#308060',주황:'#E07830',노랑:'#C4A020',빨강:'#A83030',기본:'#A86848'};
+
+var REL_TYPE_COLORS={
+  연인:'#c46a9a',커플:'#c46a9a',사랑:'#c46a9a',좋아함:'#e090b0',
+  친구:'#308060',절친:'#1a6040',동료:'#508060',
+  가족:'#3060A8',형제:'#3070B8',부모:'#2050A0',
+  라이벌:'#A87030',경쟁:'#B08030',
+  적:'#A83030',원수:'#901010',갈등:'#C04040',
+  스승:'#703090',제자:'#9050B0',
+};
+function getRelColor(type,alpha){
+  if(!type)return alpha?'rgba(168,104,72,0.22)':'rgba(168,104,72,0.7)';
+  var t=type.trim();
+  for(var k in REL_TYPE_COLORS){if(t.includes(k)){var c=REL_TYPE_COLORS[k];if(alpha)return c+'44';return c;}}
+  return alpha?'rgba(168,104,72,0.22)':'rgba(168,104,72,0.7)';
+}
+
+var chars=[],rels=[];
+try{chars=JSON.parse(localStorage.getItem('ca_chars')||'[]');}catch(e){chars=[];}
+try{rels=JSON.parse(localStorage.getItem('ca_rels')||'[]');}catch(e){rels=[];}
+var curId=null,curMemoTag='전체',relView='graph',curDreamFolder=null,modalCb=null,confirmCb=null;
+
+function save(){try{localStorage.setItem('ca_chars',JSON.stringify(chars));}catch(e){alert('저장 용량 초과! 이미지를 줄여주세요.');}try{localStorage.setItem('ca_rels',JSON.stringify(rels));}catch(e){}}
+function uid(){return 'id'+Date.now()+Math.floor(Math.random()*9999);}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function getChar(id){return chars.find(function(c){return c.id===id;})||null;}
+
+// 확인 다이얼로그
+function customConfirm(msg,cb){confirmCb=cb;document.getElementById('confirm-msg').textContent=msg;document.getElementById('confirm-overlay').style.display='flex';}
+document.getElementById('confirm-yes').addEventListener('click',function(){document.getElementById('confirm-overlay').style.display='none';if(confirmCb){confirmCb();confirmCb=null;}});
+document.getElementById('confirm-no').addEventListener('click',function(){document.getElementById('confirm-overlay').style.display='none';confirmCb=null;});
+
+// 모달
+function openModal(title,buildFn,cb){
+  modalCb=cb;document.getElementById('modal-title').textContent=title;
+  var body=document.getElementById('modal-body');body.innerHTML='';buildFn(body);
+  document.getElementById('modal-overlay').style.display='flex';
+  setTimeout(function(){var f=body.querySelector('input,select,textarea');if(f)f.focus();},60);
+}
+document.getElementById('modal-cancel').addEventListener('click',function(){document.getElementById('modal-overlay').style.display='none';modalCb=null;});
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this){this.style.display='none';modalCb=null;}});
+document.getElementById('modal-confirm').addEventListener('click',function(){if(modalCb&&modalCb()!==false){document.getElementById('modal-overlay').style.display='none';modalCb=null;}});
+
+// 아바타
+function updateAvatar(){
+  var ch=getChar(curId);if(!ch)return;
+  var av=document.getElementById('prof-avatar');av.innerHTML='';av.style.background='';
+  if(ch.img){var img=document.createElement('img');img.src=ch.img;av.appendChild(img);}
+  else{av.style.background=ch.color||COLORS[0];av.textContent=(ch.name||'?')[0];}
+}
+function makeAvatarEl(ch,size){
+  var d=document.createElement('div');
+  Object.assign(d.style,{width:size+'px',height:size+'px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',flexShrink:'0',color:'#fff',fontSize:Math.round(size*.4)+'px',fontWeight:'600'});
+  if(ch.img){var img=document.createElement('img');Object.assign(img.style,{width:'100%',height:'100%',objectFit:'cover'});d.appendChild(img);img.src=ch.img;}
+  else{d.style.background=ch.color||COLORS[0];d.textContent=(ch.name||'?')[0];}
+  return d;
+}
+document.getElementById('avatar-edit-btn').addEventListener('click',function(){document.getElementById('avatar-file-input').click();});
+document.getElementById('avatar-del-btn').addEventListener('click',function(){var ch=getChar(curId);if(ch){delete ch.img;save();updateAvatar();renderList();}});
+document.getElementById('avatar-file-input').addEventListener('change',function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();reader.onload=function(ev){var ch=getChar(curId);if(ch){ch.img=ev.target.result;save();updateAvatar();renderList();}};reader.readAsDataURL(file);e.target.value='';
+});
+
+// 팔레트
+function renderPalette(){
+  var ch=getChar(curId);if(!ch)return;
+  var wrap=document.getElementById('palette-wrap');wrap.innerHTML='';
+  (ch.palette||[]).forEach(function(c,i){
+    var sw=document.createElement('div');sw.className='palette-swatch';sw.style.background=c;sw.title=c;
+    var del=document.createElement('div');del.className='sw-del';del.textContent='×';
+    del.addEventListener('click',function(e){e.stopPropagation();ch.palette.splice(i,1);save();renderPalette();});
+    sw.appendChild(del);wrap.appendChild(sw);
+  });
+  var addBtn=document.createElement('button');addBtn.className='palette-add-btn';addBtn.textContent='+';
+  addBtn.addEventListener('click',function(){document.getElementById('palette-color-input').click();});
+  wrap.appendChild(addBtn);
+}
+document.getElementById('palette-color-input').addEventListener('input',function(){
+  var ch=getChar(curId);if(!ch)return;if(!ch.palette)ch.palette=[];
+  if((ch.palette||[]).length>=8)return;
+  if(!ch.palette.includes(this.value)){ch.palette.push(this.value);save();renderPalette();}
+});
+
+// 테마곡
+function renderThemeSongs(){
+  var ch=getChar(curId);if(!ch)return;
+  var wrap=document.getElementById('theme-songs-wrap');wrap.innerHTML='';
+  var addBtn=document.getElementById('theme-add-btn');
+  (ch.themeSongs||[]).forEach(function(s,i){
+    var row=document.createElement('div');row.className='theme-song-row';
+    var titleInp=document.createElement('input');titleInp.className='song-title';titleInp.placeholder='곡 제목';titleInp.value=s.title||'';titleInp.addEventListener('input',function(){s.title=this.value;save();});
+    var artistInp=document.createElement('input');artistInp.className='song-artist';artistInp.placeholder='아티스트';artistInp.value=s.artist||'';artistInp.addEventListener('input',function(){s.artist=this.value;save();});
+    var urlInp=document.createElement('input');urlInp.className='song-url';urlInp.placeholder='유튜브 링크';urlInp.value=s.url||'';
+    var linkBtn=document.createElement('a');linkBtn.className='theme-song-link'+(s.url?' show':'');linkBtn.textContent='▶';linkBtn.target='_blank';linkBtn.rel='noopener';linkBtn.href=s.url||'#';
+    urlInp.addEventListener('input',function(){s.url=this.value;save();linkBtn.href=this.value||'#';linkBtn.className='theme-song-link'+(this.value?' show':'');});
+    var del=document.createElement('div');del.className='theme-song-del';del.textContent='×';del.addEventListener('click',function(){ch.themeSongs.splice(i,1);save();renderThemeSongs();});
+    row.appendChild(titleInp);row.appendChild(artistInp);row.appendChild(urlInp);row.appendChild(linkBtn);row.appendChild(del);
+    wrap.appendChild(row);
+  });
+  addBtn.style.display=(ch.themeSongs||[]).length>=3?'none':'inline-block';
+}
+document.getElementById('theme-add-btn').addEventListener('click',function(){
+  var ch=getChar(curId);if(!ch)return;if(!ch.themeSongs)ch.themeSongs=[];if(ch.themeSongs.length>=3)return;
+  ch.themeSongs.push({title:'',artist:'',url:''});save();renderThemeSongs();
+});
+
+// 리스트
+function renderList(){
+  var q=(document.getElementById('search').value||'').toLowerCase();
+  var list=document.getElementById('char-list');list.innerHTML='';
+  chars.filter(function(c){return !q||((c.name||'').toLowerCase().includes(q));}).forEach(function(c){
+    var d=document.createElement('div');d.className='char-item'+(c.id===curId?' active':'');
+    d.appendChild(makeAvatarEl(c,32));
+    var info=document.createElement('div');info.className='char-info';
+    info.innerHTML='<div class="char-name">'+esc(c.name||'이름 없음')+'</div><div class="char-type">'+esc((c.type||'OC')+(c.genre?' · '+c.genre:''))+'</div>';
+    var del=document.createElement('div');del.className='char-del';del.textContent='×';
+    del.addEventListener('click',function(e){
+      e.stopPropagation();
+      customConfirm((c.name||'이 캐릭터')+'을(를) 삭제할까요?',function(){
+        chars=chars.filter(function(x){return x.id!==c.id;});
+        rels=rels.filter(function(r){return r.from!==c.id&&r.to!==c.id;});
+        save();if(curId===c.id){curId=null;showEmpty();}renderList();
+      });
+    });
+    d.appendChild(info);d.appendChild(del);
+    d.addEventListener('click',function(){selectChar(c.id);});
+    list.appendChild(d);
+  });
+}
+function showEmpty(){document.getElementById('empty').style.display='flex';document.getElementById('char-main').style.display='none';}
+function showMain(){document.getElementById('empty').style.display='none';document.getElementById('char-main').style.display='flex';}
+
+function selectChar(id){
+  curId=id;renderList();showMain();
+  loadProfile();renderMemos();renderMemoTags();renderRelPattern();renderGallery();renderTimeline();renderQuotes();renderDreamList();renderStoryFolders();renderStoryList();
+  if(document.getElementById('tab-relation').classList.contains('active'))setTimeout(drawGraph,50);
+}
+
+// 탭
+document.querySelectorAll('.mtab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    document.querySelectorAll('.mtab').forEach(function(x){x.classList.remove('active');});tab.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='relation')setTimeout(drawGraph,50);
+    if(tab.dataset.tab==='story'){renderStoryFolders();renderStoryList();}
+  });
+});
+
+// 프로필
+var PF_FIELDS=['age','gender','job','world','race','body','mbti','enneagram','blood',
+  'appear','firstlook','habit','scar','style','emotion',
+  'personality','gap','stress','selfimage','nonneg','closediff',
+  'ability','ablimit','abhow','abhidden','abchange','likes','etc'];
+function loadProfile(){
+  var ch=getChar(curId);if(!ch)return;
+  document.getElementById('prof-name').value=ch.name||'';
+  document.getElementById('prof-type').value=ch.type||'드림주';
+  document.getElementById('prof-genre').value=ch.genre||'';
+  PF_FIELDS.forEach(function(f){var el=document.getElementById('pf-'+f);if(el)el.value=ch[f]||'';});
+  renderPalette();renderThemeSongs();updateAvatar();
+}
+(function bindProfile(){
+  document.getElementById('prof-name').addEventListener('input',function(){var ch=getChar(curId);if(ch){ch.name=this.value;save();renderList();updateAvatar();}});
+  document.getElementById('prof-type').addEventListener('change',function(){var ch=getChar(curId);if(ch){ch.type=this.value;save();renderList();}});
+  document.getElementById('prof-genre').addEventListener('input',function(){var ch=getChar(curId);if(ch){ch.genre=this.value;save();renderList();}});
+  PF_FIELDS.forEach(function(f){var el=document.getElementById('pf-'+f);if(el)el.addEventListener('input',function(){var ch=getChar(curId);if(ch){ch[f]=this.value;save();}});});
+})();
+
+// 내면·심리
+function renderRelPattern(){
+  var ch=getChar(curId);if(!ch)return;
+  document.querySelectorAll('.rp-field').forEach(function(el){
+    el.value=ch[el.dataset.rpf]||'';
+    el.addEventListener('input',function(){var c2=getChar(curId);if(c2){c2[el.dataset.rpf]=el.value;save();}});
+  });
+}
+
+// 메모
+function renderMemos(){
+  var ch=getChar(curId);if(!ch)return;
+  renderMemoTags();
+  var memos=(ch.memos||[]).filter(function(m){return curMemoTag==='전체'||m.tag===curMemoTag;});
+  var list=document.getElementById('memo-list');list.innerHTML='';
+  if(!memos.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='메모가 없어요';list.appendChild(e);return;}
+  memos.forEach(function(m){
+    var tc=getTagColor(m.tag);
+    var card=document.createElement('div');card.className='memo-card';card.style.borderLeftColor=tc;
+    var top=document.createElement('div');top.className='memo-card-top';
+    var tagSpan=document.createElement('span');tagSpan.className='memo-card-tag';
+    var tagText=m.tag+(m.subtag?' · '+m.subtag:'');tagSpan.textContent=tagText;tagSpan.style.background=tc+'20';tagSpan.style.color=tc;
+    var titleInp=document.createElement('input');titleInp.className='memo-card-title';titleInp.placeholder='제목';titleInp.value=m.title||'';titleInp.addEventListener('input',function(){m.title=this.value;save();});
+    var delBtn=document.createElement('div');delBtn.className='memo-card-del';delBtn.textContent='×';
+    delBtn.addEventListener('click',function(){var ch2=getChar(curId);if(ch2){ch2.memos=(ch2.memos||[]).filter(function(x){return x.id!==m.id;});save();renderMemos();}});
+    top.appendChild(tagSpan);top.appendChild(titleInp);top.appendChild(delBtn);
+    var ta=document.createElement('textarea');ta.className='memo-card-text';ta.value=m.text||'';ta.rows=3;ta.placeholder='내용...';ta.addEventListener('input',function(){m.text=this.value;save();});
+    var src=document.createElement('input');src.className='memo-card-source';src.value=m.source||'';src.placeholder='출처 / 분류 (선택)';src.addEventListener('input',function(){m.source=this.value;save();});
+    // 연결 메모
+    var lw=document.createElement('div');lw.className='memo-link-wrap';
+    var ll=document.createElement('span');ll.className='memo-link-label';ll.textContent='연결';lw.appendChild(ll);
+    var ch3=getChar(curId);
+    (m.links||[]).forEach(function(lid){
+      var lm=(ch3?ch3.memos||[]:[]).find(function(x){return x.id===lid;});if(!lm)return;
+      var chip=document.createElement('span');chip.className='memo-link-chip';chip.textContent=(lm.title||lm.tag||'메모')+'  ×';
+      chip.addEventListener('click',function(){m.links=(m.links||[]).filter(function(x){return x!==lid;});save();renderMemos();});lw.appendChild(chip);
+    });
+    var addLink=document.createElement('button');addLink.className='memo-link-add';addLink.textContent='+ 연결';
+    addLink.addEventListener('click',function(){
+      var ch4=getChar(curId);if(!ch4)return;
+      var others=(ch4.memos||[]).filter(function(x){return x.id!==m.id&&!(m.links||[]).includes(x.id);});
+      if(!others.length){alert('연결할 다른 메모가 없어요!');return;}
+      openModal('메모 연결',function(body){
+        var opts=others.map(function(x){return '<option value="'+x.id+'">['+esc(x.tag)+'] '+esc(x.title||x.text.slice(0,20)||'메모')+'</option>';}).join('');
+        body.innerHTML='<div class="modal-field"><label>연결할 메모</label><select id="m-linkid">'+opts+'</select></div>';
+      },function(){var sel=document.getElementById('m-linkid');if(!sel||!sel.value)return false;if(!m.links)m.links=[];m.links.push(sel.value);save();renderMemos();return true;});
+    });
+    lw.appendChild(addLink);
+    card.appendChild(top);card.appendChild(ta);card.appendChild(src);card.appendChild(lw);
+    list.appendChild(card);
+  });
+}
+document.querySelectorAll('.tag-pill[data-tag]').forEach(function(el){
+  el.addEventListener('click',function(){
+    el.closest('.tab-toolbar').querySelectorAll('.tag-pill[data-tag]').forEach(function(x){x.classList.remove('active');});
+    el.classList.add('active');curMemoTag=el.dataset.tag;renderMemos();
+  });
+});
+document.getElementById('memo-add-btn').addEventListener('click',function(){
+  var ch=getChar(curId);if(!ch)return;
+  var existingTags=[];
+  (ch.memos||[]).forEach(function(m){if(m.tag&&!existingTags.includes(m.tag))existingTags.push(m.tag);});
+  openModal('메모 추가',function(body){
+    body.innerHTML=
+      '<div class="modal-field"><label>태그 (직접 입력)</label><input id="m-tag" type="text" placeholder="태그"><div id="m-tag-hints" class="modal-hint" style="margin-top:5px"></div></div>'+
+      '<div class="modal-field"><label>제목</label><input id="m-title" type="text" placeholder="메모 제목"></div>'+
+      '<div class="modal-field"><label>내용</label><textarea id="m-text" rows="5" placeholder="자유롭게 입력하세요..."></textarea></div>'+
+      '<div class="modal-field"><label>출처 (선택)</label><input id="m-source" type="text" placeholder="원작 몇 화, 자체 설정..."></div>';
+    if(existingTags.length){
+      var hints=document.getElementById('m-tag-hints');
+      existingTags.forEach(function(t){
+        var tc=getTagColor(t);
+        var sp=document.createElement('span');
+        sp.textContent=t;
+        sp.style.cssText='display:inline-block;font-size:10px;padding:2px 8px;border-radius:100px;background:'+tc+'20;color:'+tc+';border:1px solid '+tc+'44;cursor:pointer;margin:2px';
+        sp.addEventListener('click',function(){var el=document.getElementById('m-tag');if(el)el.value=t;});
+        hints.appendChild(sp);
+      });
+    }
+  },function(){
+    if(!ch.memos)ch.memos=[];
+    var tag=((document.getElementById('m-tag')||{}).value||'').trim()||'기타';
+    ch.memos.push({id:uid(),tag:tag,title:(document.getElementById('m-title')||{}).value||'',text:(document.getElementById('m-text')||{}).value||'',source:(document.getElementById('m-source')||{}).value||'',links:[]});
+    save();renderMemos();renderMemoTags();return true;
+  });
+});
+
+// 갤러리
+function renderGallery(){
+  var ch=getChar(curId);if(!ch)return;
+  var grid=document.getElementById('gallery-grid');grid.innerHTML='';
+  var imgs=ch.gallery||[];
+  if(!imgs.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='이미지를 추가해보세요';grid.appendChild(e);return;}
+  imgs.forEach(function(img){
+    var item=document.createElement('div');item.className='gallery-item';
+    var el=document.createElement('img');el.src=img.src;el.style.cursor='pointer';
+    el.addEventListener('click',function(){openLightbox(img.src);});
+    var del=document.createElement('div');del.className='gallery-item-del';del.textContent='×';
+    del.addEventListener('click',function(e){e.stopPropagation();ch.gallery=(ch.gallery||[]).filter(function(x){return x.id!==img.id;});save();renderGallery();});
+    var btns=document.createElement('div');btns.className='gallery-item-btns';
+    var expandBtn=document.createElement('button');expandBtn.className='gallery-item-btn';expandBtn.textContent='확대';
+    expandBtn.addEventListener('click',function(e){e.stopPropagation();openLightbox(img.src);});
+    var dlBtn=document.createElement('button');dlBtn.className='gallery-item-btn';dlBtn.textContent='저장';
+    dlBtn.addEventListener('click',function(e){e.stopPropagation();downloadImg(img.src,'image_'+img.id);});
+    btns.appendChild(expandBtn);btns.appendChild(dlBtn);
+    item.appendChild(el);item.appendChild(del);item.appendChild(btns);grid.appendChild(item);
+  });
+}
+document.getElementById('gallery-add-btn').addEventListener('click',function(){document.getElementById('gallery-file-input').click();});
+document.getElementById('gallery-file-input').addEventListener('change',function(e){
+  var files=Array.from(e.target.files);if(!files.length)return;
+  var ch=getChar(curId);if(!ch)return;if(!ch.gallery)ch.gallery=[];
+  var count=0;files.forEach(function(file){var reader=new FileReader();reader.onload=function(ev){ch.gallery.push({id:uid(),src:ev.target.result});count++;if(count===files.length){save();renderGallery();}};reader.readAsDataURL(file);});e.target.value='';
+});
+
+// 타임라인
+var openColorPicker=null;
+function renderTimeline(){
+  var ch=getChar(curId);if(!ch)return;
+  var list=document.getElementById('timeline-list');list.innerHTML='';
+  var events=ch.timeline||[];
+  if(!events.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='사건을 추가해보세요';list.appendChild(e);return;}
+  events.forEach(function(ev){
+    var item=document.createElement('div');item.className='tl-item';
+    var left=document.createElement('div');left.className='tl-left';
+    var dot=document.createElement('div');dot.className='tl-dot';
+    dot.style.background=TL_DOT_COLORS[ev.dotColor]||TL_DOT_COLORS['기본'];
+    // 색상 선택기
+    dot.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(openColorPicker){openColorPicker.remove();openColorPicker=null;}
+      var picker=document.createElement('div');picker.className='tl-color-picker';
+      Object.keys(TL_DOT_COLORS).forEach(function(k){
+        var btn=document.createElement('div');btn.className='tl-color-btn';btn.style.background=TL_DOT_COLORS[k];btn.title=k;
+        btn.addEventListener('click',function(e){e.stopPropagation();ev.dotColor=k;dot.style.background=TL_DOT_COLORS[k];save();picker.remove();openColorPicker=null;});
+        picker.appendChild(btn);
+      });
+      left.style.position='relative';left.appendChild(picker);openColorPicker=picker;
+    });
+    document.addEventListener('click',function removePicker(){if(openColorPicker){openColorPicker.remove();openColorPicker=null;}document.removeEventListener('click',removePicker);},{once:true});
+    var line=document.createElement('div');line.className='tl-line';
+    left.appendChild(dot);left.appendChild(line);
+    var right=document.createElement('div');right.className='tl-right';
+    var dateInp=document.createElement('input');dateInp.className='tl-date-input';dateInp.value=ev.date||'';dateInp.placeholder='시기';dateInp.addEventListener('input',function(){ev.date=this.value;save();});
+    var titleInp=document.createElement('input');titleInp.className='tl-title-input';titleInp.value=ev.title||'';titleInp.placeholder='사건 이름';titleInp.addEventListener('input',function(){ev.title=this.value;save();});
+    var descInp=document.createElement('textarea');descInp.className='tl-desc-input';descInp.value=ev.desc||'';descInp.rows=2;descInp.placeholder='설명...';descInp.addEventListener('input',function(){ev.desc=this.value;save();});
+    var del=document.createElement('div');del.className='tl-del';del.textContent='×';del.addEventListener('click',function(){ch.timeline=(ch.timeline||[]).filter(function(x){return x.id!==ev.id;});save();renderTimeline();});
+    right.appendChild(dateInp);right.appendChild(titleInp);right.appendChild(descInp);
+    item.appendChild(left);item.appendChild(right);item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+document.getElementById('tl-add-btn').addEventListener('click',function(){
+  var ch=getChar(curId);if(!ch)return;if(!ch.timeline)ch.timeline=[];
+  ch.timeline.push({id:uid(),date:'',title:'',desc:'',dotColor:'기본'});
+  save();renderTimeline();
+  var items=document.getElementById('timeline-list').querySelectorAll('.tl-date-input');if(items.length)items[items.length-1].focus();
+});
+
+// 대사
+function renderQuotes(){
+  var ch=getChar(curId);if(!ch)return;
+  var list=document.getElementById('quotes-list');list.innerHTML='';
+  var quotes=ch.quotes||[];
+  if(!quotes.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='대사를 추가해보세요';list.appendChild(e);return;}
+  quotes.forEach(function(q){
+    var card=document.createElement('div');card.className='quote-card';
+    var textEl=document.createElement('textarea');textEl.className='quote-text';textEl.value=q.text||'';textEl.rows=2;textEl.placeholder='대사 내용';textEl.addEventListener('input',function(){q.text=this.value;save();});
+    var ctxEl=document.createElement('textarea');ctxEl.className='quote-context';ctxEl.value=q.context||'';ctxEl.rows=1;ctxEl.placeholder='상황이나 말투 특징';ctxEl.addEventListener('input',function(){q.context=this.value;save();});
+    var del=document.createElement('div');del.className='quote-del';del.textContent='×';del.addEventListener('click',function(){ch.quotes=(ch.quotes||[]).filter(function(x){return x.id!==q.id;});save();renderQuotes();});
+    card.appendChild(textEl);card.appendChild(ctxEl);card.appendChild(del);list.appendChild(card);
+  });
+}
+document.getElementById('quotes-add-btn').addEventListener('click',function(){
+  var ch=getChar(curId);if(!ch)return;if(!ch.quotes)ch.quotes=[];
+  ch.quotes.push({id:uid(),text:'',context:''});save();renderQuotes();
+  var items=document.getElementById('quotes-list').querySelectorAll('.quote-text');if(items.length)items[items.length-1].focus();
+});
+
+// 드관
+function renderPairs(){renderPairsNav();return;/*old*/
+  var ch=getChar(curId);if(!ch)return;
+  var list=document.getElementById('pairs-list');list.innerHTML='';
+  var pairs=(ch.pairs||[]).filter(function(p){return p.ptype==='dg';});
+  if(!pairs.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='드관을 추가해보세요';list.appendChild(e);return;}
+  pairs.forEach(function(p){
+    var card=document.createElement('div');card.className='pair-card';
+    var hdr=document.createElement('div');hdr.className='pair-card-header';
+    var badge=document.createElement('span');badge.className='pair-type-badge dg';badge.textContent='드관';
+    var titleInp=document.createElement('input');titleInp.className='pair-title-input';
+    titleInp.placeholder='이름';
+    titleInp.value=p.name||'';titleInp.addEventListener('input',function(){p.name=this.value;save();});
+    var del=document.createElement('div');del.className='pair-del';del.textContent='×';del.addEventListener('click',function(){ch.pairs=(ch.pairs||[]).filter(function(x){return x.id!==p.id;});save();renderPairs();});
+    hdr.appendChild(badge);hdr.appendChild(titleInp);hdr.appendChild(del);card.appendChild(hdr);
+    var grid=document.createElement('div');grid.className='pair-fields-grid';
+    var fields=[{k:'relation',l:'관계성',ph:'서로 어떤 관계인지...'},{k:'pairdesc',l:'설명',ph:'드관 설명, 세계관 공유 여부...'},{k:'partner',l:'상대방 드림주 이름',ph:'상대방 드림주 이름'},{k:'memo',l:'기타 메모',ph:'자유롭게...'}];
+    fields.forEach(function(fd){
+      var box=document.createElement('div');box.className='pair-field-box';
+      var lb=document.createElement('div');lb.className='pair-field-label';lb.textContent=fd.l;
+      var ta=document.createElement('textarea');ta.className='pair-field-input';ta.value=p[fd.k]||'';ta.rows=2;ta.placeholder=fd.ph;ta.addEventListener('input',function(){p[fd.k]=this.value;save();});
+      box.appendChild(lb);box.appendChild(ta);grid.appendChild(box);
+    });
+    card.appendChild(grid);list.appendChild(card);
+  });
+}
+
+// 드림 썰
+function renderDreamTags(){
+  var ch=getChar(curId);if(!ch)return;
+  var toolbar=document.getElementById('dream-toolbar');if(!toolbar)return;
+  Array.from(toolbar.querySelectorAll('.tag-pill:not(#dream-tag-all)')).forEach(function(el){el.remove();});
+  var addBtn=document.getElementById('dream-add-btn');
+  var tags=[];
+  (ch.dreams||[]).forEach(function(d){if(d.tag&&!tags.includes(d.tag))tags.push(d.tag);});
+  tags.forEach(function(tag){
+    var pill=document.createElement('div');pill.className='tag-pill';pill.textContent=tag;pill.dataset.tag=tag;
+    if(curDreamTag===tag)pill.classList.add('active');
+    pill.addEventListener('click',function(){
+      toolbar.querySelectorAll('.tag-pill').forEach(function(x){x.classList.remove('active');});
+      pill.classList.add('active');curDreamTag=tag;renderDreamList();
+    });
+    toolbar.insertBefore(pill,addBtn);
+  });
+  var allBtn=document.getElementById('dream-tag-all');
+  if(allBtn){
+    allBtn.classList.toggle('active',curDreamTag==='전체');
+    allBtn.onclick=function(){
+      toolbar.querySelectorAll('.tag-pill').forEach(function(x){x.classList.remove('active');});
+      allBtn.classList.add('active');curDreamTag='전체';renderDreamList();
+    };
+  }
+}
+
+function renderDreamList(){
+  var ch=getChar(curId);if(!ch)return;
+  renderDreamTags();
+  var dreams=(ch.dreams||[]).filter(function(d){return curDreamTag==='전체'||d.tag===curDreamTag;});
+  var list=document.getElementById('dream-list');list.innerHTML='';
+  if(!dreams.length){
+    var e=document.createElement('div');e.style.cssText='text-align:center;padding:40px;color:var(--text-dim);font-size:12px;letter-spacing:1px';
+    e.textContent='썰을 추가해보세요';list.appendChild(e);return;
+  }
+  dreams.forEach(function(d){
+    var tc=getTagColor(d.tag||'기타');
+    var card=document.createElement('div');card.className='dream-card';card.style.borderLeftColor=tc;
+    var top=document.createElement('div');top.className='dream-card-top';
+    var tagSpan=document.createElement('span');tagSpan.className='dream-card-tag';
+    tagSpan.textContent=d.tag||'기타';tagSpan.style.background=tc+'20';tagSpan.style.color=tc;
+    var titleInp=document.createElement('input');titleInp.className='dream-card-title';
+    titleInp.placeholder='제목';titleInp.value=d.title||'';
+    titleInp.addEventListener('input',function(){d.title=this.value;save();});
+    var dateEl=document.createElement('span');dateEl.className='dream-card-date';dateEl.textContent=d.date||'';
+    var del=document.createElement('div');del.className='dream-card-del';del.textContent='×';
+    del.addEventListener('click',function(){
+      customConfirm('이 썰을 삭제할까요?',function(){
+        ch.dreams=(ch.dreams||[]).filter(function(x){return x.id!==d.id;});
+        save();renderDreamList();
+      });
+    });
+    top.appendChild(tagSpan);top.appendChild(titleInp);top.appendChild(dateEl);top.appendChild(del);
+    var ta=document.createElement('textarea');ta.className='dream-card-text';ta.value=d.text||'';ta.rows=5;
+    ta.placeholder='썰 내용을 자유롭게 작성하세요...';
+    ta.addEventListener('input',function(){d.text=this.value;save();});
+    card.appendChild(top);card.appendChild(ta);
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('dream-add-btn').addEventListener('click',function(){
+  var ch=getChar(curId);if(!ch)return;
+  var existingTags=['기타'];
+  (ch.dreams||[]).forEach(function(d){if(d.tag&&!existingTags.includes(d.tag))existingTags.push(d.tag);});
+  var tagListHtml=existingTags.map(function(t){
+    var pill=document.createElement('span');
+    pill.style.cssText='display:inline-block;font-size:10px;padding:2px 8px;border-radius:100px;background:'+getTagColor(t)+'22;color:'+getTagColor(t)+';border:1px solid '+getTagColor(t)+'44;cursor:pointer;margin:2px';
+    pill.textContent=t;
+    pill.addEventListener('click',function(){var el=document.getElementById('d-tag');if(el)el.value=t;});
+    return pill.outerHTML;}).join('');
+  openModal('썰 추가',function(body){
+    body.innerHTML=
+      '<div class="modal-field"><label>태그 (직접 입력)</label><input id="d-tag" type="text" placeholder="태그"><div class="modal-hint" style="margin-top:5px">기존 태그: '+tagListHtml+'</div></div>'+
+      '<div class="modal-field"><label>제목</label><input id="d-title" type="text" placeholder="썰 제목"></div>';
+  },function(){
+    if(!ch.dreams)ch.dreams=[];
+    var now=new Date();var date=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0')+'-'+now.getDate().toString().padStart(2,'0');
+    var tag=((document.getElementById('d-tag')||{}).value||'').trim()||'기타';
+    ch.dreams.push({id:uid(),tag:tag,title:(document.getElementById('d-title')||{}).value||'',text:'',date:date});
+    save();renderDreamList();
+    setTimeout(function(){
+      var items=document.getElementById('dream-list').querySelectorAll('.dream-card-title');
+      if(items.length)items[items.length-1].focus();
+    },50);
+    return true;
+  });
+});
+
+
+// 관계도
+var canvas=document.getElementById('rel-canvas');
+var rctx=canvas.getContext('2d');
+var nodes={},dragging=null,dragOffX=0,dragOffY=0,isPanning=false,panSX=0,panSY=0,panX=0,panY=0;
+function initNodes(){
+  nodes={};if(!curId)return;
+  var cx=canvas.width/2,cy=canvas.height/2;
+  nodes[curId]={id:curId,x:cx,y:cy,main:true,ext:false};
+  var myRels=rels.filter(function(r){return r.from===curId||r.to===curId;});
+  myRels.forEach(function(r,i){
+    var oid=r.from===curId?r.to:r.from;if(nodes[oid])return;
+    var angle=(2*Math.PI/Math.max(myRels.length,1))*i-Math.PI/2;
+    nodes[oid]={id:oid,x:cx+Math.cos(angle)*170,y:cy+Math.sin(angle)*170,main:false,ext:r.ext&&r.from===curId,extName:r.extName||''};
+  });
+}
+function drawGraph(){
+  var wrap=document.getElementById('rel-canvas-wrap');
+  canvas.width=wrap.clientWidth||600;canvas.height=wrap.clientHeight||380;
+  panX=0;panY=0;initNodes();renderGraph();updateRelLegend();
+}
+function renderGraph(){
+  rctx.clearRect(0,0,canvas.width,canvas.height);rctx.save();rctx.translate(panX,panY);
+  if(!curId){rctx.restore();return;}
+  rels.filter(function(r){return r.from===curId||r.to===curId;}).forEach(function(r){
+    var n1=nodes[r.from],n2=nodes[r.to];if(!n1||!n2)return;
+    rctx.beginPath();rctx.moveTo(n1.x,n1.y);rctx.lineTo(n2.x,n2.y);
+    rctx.strokeStyle=r.ext?'rgba(100,100,100,0.2)':getRelColor(r.type,true);rctx.lineWidth=r.ext?1:2;rctx.stroke();
+    if(r.type){rctx.fillStyle=r.ext?'rgba(100,100,100,0.6)':getRelColor(r.type,false);rctx.font='10px Noto Serif KR';rctx.textAlign='center';rctx.fillText(r.type,(n1.x+n2.x)/2,(n1.y+n2.y)/2-5);}
+  });
+  Object.values(nodes).forEach(function(n){
+    var r=n.main?28:20;
+    var ch=n.ext?null:getChar(n.id);
+    var name=n.ext?n.extName:(ch?ch.name||'?':'?');
+    var color=n.ext?'#aaa':(ch?ch.color||COLORS[0]:COLORS[0]);
+    rctx.save();rctx.beginPath();rctx.arc(n.x,n.y,r,0,Math.PI*2);rctx.clip();
+    if(ch&&ch.img){var tmp=new Image();tmp.src=ch.img;rctx.drawImage(tmp,n.x-r,n.y-r,r*2,r*2);}
+    else{rctx.fillStyle=color;rctx.globalAlpha=n.main?1:0.85;rctx.fill();rctx.globalAlpha=1;}
+    rctx.restore();
+    if(n.main){rctx.beginPath();rctx.arc(n.x,n.y,r+3,0,Math.PI*2);rctx.strokeStyle='rgba(168,104,72,0.5)';rctx.lineWidth=2;rctx.stroke();}
+    if(n.ext){rctx.beginPath();rctx.arc(n.x,n.y,r,0,Math.PI*2);rctx.strokeStyle='rgba(150,150,150,0.5)';rctx.lineWidth=1.5;rctx.setLineDash([3,3]);rctx.stroke();rctx.setLineDash([]);}
+    if(!(ch&&ch.img)){rctx.fillStyle='#fff';rctx.font=(n.main?'600 ':'')+'12px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='middle';rctx.fillText(name[0],n.x,n.y);}
+    rctx.fillStyle='#5A4A38';rctx.font='11px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='top';rctx.fillText(name,n.x,n.y+r+4);
+  });
+  rctx.restore();
+}
+function updateRelLegend(){
+  var legend=document.getElementById('rel-legend');if(!legend)return;legend.innerHTML='';
+  var shown={};
+  rels.filter(function(r){return(r.from===curId||r.to===curId)&&r.type&&!r.ext;}).forEach(function(r){
+    if(shown[r.type])return;shown[r.type]=true;
+    var item=document.createElement('div');item.className='rel-legend-item';
+    var line=document.createElement('div');line.className='rel-legend-line';line.style.background=getRelColor(r.type,false);
+    var label=document.createElement('span');label.textContent=r.type;
+    item.appendChild(line);item.appendChild(label);legend.appendChild(item);
+  });
+}
+canvas.addEventListener('mousedown',function(e){
+  var rect=canvas.getBoundingClientRect();var mx=e.clientX-rect.left-panX,my=e.clientY-rect.top-panY;
+  var found=null;Object.values(nodes).forEach(function(n){if(Math.hypot(n.x-mx,n.y-my)<(n.main?28:20))found=n;});
+  if(found){dragging=found;dragOffX=mx-found.x;dragOffY=my-found.y;canvas.classList.add('dragging');}
+  else{isPanning=true;panSX=e.clientX-panX;panSY=e.clientY-panY;canvas.classList.add('dragging');}
+});
+canvas.addEventListener('mousemove',function(e){
+  if(dragging){var rect=canvas.getBoundingClientRect();dragging.x=e.clientX-rect.left-panX-dragOffX;dragging.y=e.clientY-rect.top-panY-dragOffY;renderGraph();}
+  else if(isPanning){panX=e.clientX-panSX;panY=e.clientY-panSY;renderGraph();}
+});
+window.addEventListener('mouseup',function(){dragging=null;isPanning=false;canvas.classList.remove('dragging');});
+
+function renderRelTables(){
+  var myRels=rels.filter(function(r){return(r.from===curId||r.to===curId)&&!r.ext;});
+  var extRels=rels.filter(function(r){return r.from===curId&&r.ext;});
+  function makeRow(tbody,cols,rid){
+    var tr=document.createElement('tr');
+    cols.forEach(function(c){var td=document.createElement('td');td.innerHTML=c;tr.appendChild(td);});
+    var delTd=document.createElement('td');var delBtn=document.createElement('span');delBtn.className='del-rel';delBtn.textContent='×';
+    delBtn.addEventListener('click',function(){rels=rels.filter(function(x){return x.id!==rid;});save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,20);});
+    delTd.appendChild(delBtn);tr.appendChild(delTd);tbody.appendChild(tr);
+  }
+  var tbodyMy=document.getElementById('rel-tbody-my');tbodyMy.innerHTML='';
+  myRels.forEach(function(r){var oid=r.from===curId?r.to:r.from;var other=getChar(oid);makeRow(tbodyMy,[(other?esc(other.name):'알 수 없음'),'<span class="rel-tag">'+esc(r.type||'')+'</span>',esc(r.desc||'')],r.id);});
+  var tbodyExt=document.getElementById('rel-tbody-ext');tbodyExt.innerHTML='';
+  extRels.forEach(function(r){makeRow(tbodyExt,[esc(r.extName||'')+'<span class="rel-ext-badge">외부</span>','<span class="rel-tag">'+esc(r.type||'')+'</span>',esc(r.desc||'')],r.id);});
+}
+document.querySelectorAll('.rel-view-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.rel-view-btn').forEach(function(x){x.classList.remove('active');});btn.classList.add('active');relView=btn.dataset.view;
+    document.getElementById('rel-canvas-wrap').style.display=relView==='graph'?'block':'none';
+    document.getElementById('rel-table-wrap').style.display=relView==='table'?'block':'none';
+    if(relView==='graph')setTimeout(drawGraph,30);else renderRelTables();
+  });
+});
+document.getElementById('rel-add-my-btn').addEventListener('click',function(){
+  var others=chars.filter(function(c){return c.id!==curId;});
+  if(!others.length){alert('다른 캐릭터가 1명 이상 필요해요!');return;}
+  openModal('내 캐릭터 관계 추가',function(body){
+    var opts=others.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
+    body.innerHTML='<div class="modal-field"><label>상대 캐릭터</label><select id="m-target">'+opts+'</select></div><div class="modal-field"><label>관계 유형</label><input id="m-reltype" type="text" placeholder="관계 유형"></div><div class="modal-field"><label>설명 (선택)</label><textarea id="m-reldesc" rows="3" placeholder="관계 설명..."></textarea></div>';
+  },function(){
+    var tEl=document.getElementById('m-target');if(!tEl||!tEl.value)return false;
+    rels.push({id:uid(),from:curId,to:tEl.value,type:(document.getElementById('m-reltype')||{}).value||'',desc:(document.getElementById('m-reldesc')||{}).value||'',ext:false});
+    save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,30);return true;
+  });
+});
+document.getElementById('rel-add-ext-btn').addEventListener('click',function(){
+  openModal('외부 캐릭터 추가',function(body){
+    body.innerHTML='<div class="modal-field"><label>캐릭터 이름</label><input id="m-extname" type="text" placeholder="이름"><div class="modal-hint">내 캐릭터 목록에 없는 외부 캐릭터예요</div></div><div class="modal-field"><label>관계 유형</label><input id="m-reltype" type="text" placeholder="관계 유형"></div><div class="modal-field"><label>설명 (선택)</label><textarea id="m-reldesc" rows="3" placeholder="관계 설명..."></textarea></div>';
+  },function(){
+    var nameEl=document.getElementById('m-extname');var name=(nameEl?nameEl.value:'').trim();if(!name){alert('이름을 입력해주세요!');return false;}
+    rels.push({id:uid(),from:curId,to:'ext_'+uid(),type:(document.getElementById('m-reltype')||{}).value||'',desc:(document.getElementById('m-reldesc')||{}).value||'',ext:true,extName:name});
+    save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,30);return true;
+  });
+});
+
+// 내보내기/불러오기 (캐릭터 단위)
+document.getElementById('export-btn').addEventListener('click',function(){
+  if(!curId){alert('먼저 내보낼 캐릭터를 선택해주세요!');return;}
+  var ch=getChar(curId);if(!ch)return;
+  var charRels=rels.filter(function(r){return r.from===curId||r.to===curId;});
+  var data={char:ch,rels:charRels,version:2};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;
+  a.download=(ch.name||'캐릭터')+'_'+(new Date().toISOString().slice(0,10))+'.json';a.click();URL.revokeObjectURL(url);
+});
+document.getElementById('import-btn').addEventListener('click',function(){document.getElementById('import-file-input').click();});
+document.getElementById('import-file-input').addEventListener('change',function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var data=JSON.parse(ev.target.result);
+      // 단일 캐릭터 형식 (version 2)
+      if(data.char){
+        var incoming=data.char;
+        var existing=chars.find(function(c){return c.id===incoming.id;});
+        if(existing){
+          // 같은 id가 이미 있으면 새 id 부여
+          incoming.id=uid();
+          (data.rels||[]).forEach(function(r){if(r.from===existing.id)r.from=incoming.id;if(r.to===existing.id)r.to=incoming.id;});
+        }
+        chars.push(incoming);
+        (data.rels||[]).forEach(function(r){rels.push(r);});
+        save();renderList();selectChar(incoming.id);
+        alert('"'+incoming.name+'" 캐릭터를 불러왔어요!');
+      // 전체 내보내기 형식 (version 1, 하위호환)
+      } else if(data.chars){
+        var added=0;
+        (data.chars||[]).forEach(function(incoming){
+          var existing=chars.find(function(c){return c.id===incoming.id;});
+          if(existing)incoming.id=uid();
+          chars.push(incoming);added++;
+        });
+        (data.rels||[]).forEach(function(r){rels.push(r);});
+        save();renderList();
+        if(chars.length>0&&!curId)selectChar(chars[0].id);
+        alert('캐릭터 '+added+'명을 불러왔어요!');
+      } else {
+        throw new Error('올바른 형식이 아닙니다');
+      }
+    }catch(err){alert('불러오지 못했어요: '+err.message);}
+  };
+  reader.readAsText(file);e.target.value='';
+});
+
+// 캐릭터 추가
+document.getElementById('add-btn').addEventListener('click',function(){
+  openModal('새 캐릭터',function(body){
+    body.innerHTML='<div class="modal-field"><label>이름</label><input id="m-name" type="text" placeholder="캐릭터 이름"></div><div class="modal-row"><div class="modal-field"><label>유형</label><select id="m-type"><option value="드림주">드림주</option><option value="OC">OC</option><option value="기타">기타</option></select></div><div class="modal-field"><label>장르 / 세계관</label><input id="m-genre" type="text" placeholder="판타지, 현대물..."></div></div>';
+  },function(){
+    var nameEl=document.getElementById('m-name');var name=(nameEl?nameEl.value:'').trim();
+    if(!name){alert('이름을 입력해주세요!');if(nameEl)nameEl.focus();return false;}
+    var nc={id:uid(),name:name,type:(document.getElementById('m-type')||{}).value||'OC',genre:(document.getElementById('m-genre')||{}).value||'',color:COLORS[chars.length%COLORS.length],palette:[],themeSongs:[],memos:[],gallery:[],timeline:[],quotes:[],dreams:[],dreamFolders:[],storyFolders:[]};
+    chars.push(nc);save();renderList();selectChar(nc.id);return true;
+  });
+});
+
+
+// ── 라이트박스 ──
+function openLightbox(src){
+  var lb=document.getElementById('img-lightbox');
+  document.getElementById('lb-img').src=src;
+  lb.style.display='flex';
+}
+function downloadImg(src,name){
+  var a=document.createElement('a');a.href=src;a.download=name+'.png';a.click();
+}
+document.getElementById('lb-close').addEventListener('click',function(){document.getElementById('img-lightbox').style.display='none';});
+document.getElementById('lb-download').addEventListener('click',function(){var img=document.getElementById('lb-img');downloadImg(img.src,'gallery_image');});
+document.getElementById('img-lightbox').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+
+// ── 페어링 새 구조 ──
+var curPairId=null;
+function renderPairsNav(){
+  var ch=getChar(curId);if(!ch)return;
+  var nav=document.getElementById('pairs-list-nav');nav.innerHTML='';
+  (ch.pairs||[]).forEach(function(p){
+    var item=document.createElement('div');item.className='pair-nav-item'+(p.id===curPairId?' active':'');
+    var name=document.createElement('span');name.className='pair-nav-name';name.textContent=p.name||'(이름 없음)';
+    var del=document.createElement('span');del.className='pair-nav-del';del.textContent='×';
+    del.addEventListener('click',function(e){
+      e.stopPropagation();
+      customConfirm('이 페어를 삭제할까요?',function(){
+        ch.pairs=(ch.pairs||[]).filter(function(x){return x.id!==p.id;});
+        if(curPairId===p.id){curPairId=null;}
+        save();renderPairsNav();renderPairDetail();
+      });
+    });
+    item.appendChild(name);item.appendChild(del);
+    item.addEventListener('click',function(){curPairId=p.id;renderPairsNav();renderPairDetail();});
+    nav.appendChild(item);
+  });
+  renderPairDetail();
+}
+function renderPairDetail(){
+  var ch=getChar(curId);
+  var content_el=document.getElementById('pairs-content');
+  if(!ch||!curPairId){content_el.innerHTML='<div class="pair-empty"><span style="font-size:28px;opacity:.3">✦</span><span>페어를 선택하세요</span></div>';return;}
+  var p=(ch.pairs||[]).find(function(x){return x.id===curPairId;});
+  if(!p){content_el.innerHTML='<div class="pair-empty"><span style="font-size:28px;opacity:.3">✦</span><span>페어를 선택하세요</span></div>';return;}
+  content_el.innerHTML='';
+  var hdr=document.createElement('div');hdr.className='pair-detail-header';
+  var nameInp=document.createElement('input');nameInp.className='pair-detail-name-input';
+  nameInp.placeholder='페어 이름';nameInp.value=p.name||'';
+  nameInp.addEventListener('input',function(){p.name=this.value;save();renderPairsNav();});
+  hdr.appendChild(nameInp);content_el.appendChild(hdr);
+  var fieldWrap=document.createElement('div');fieldWrap.className='pair-detail-fields';
+  var fields=[
+    {key:'p_relation',label:'관계성',ph:'어떤 관계인지, 케미, 분위기...'},
+    {key:'p_desc',label:'설명',ph:'페어 설명, 주요 설정...'},
+    {key:'p_tag',label:'태그',ph:'#현대물 #달달 #드관 등...'},
+    {key:'p_memo',label:'기타 메모',ph:'자유롭게...'}
+  ];
+  fields.forEach(function(fd){
+    var box=document.createElement('div');box.className='pair-field-box';
+    var lbl=document.createElement('div');lbl.className='pair-field-label';lbl.textContent=fd.label;
+    var ta=document.createElement('textarea');ta.className='pair-field-input';ta.value=p[fd.key]||'';ta.rows=3;ta.placeholder=fd.ph;
+    ta.addEventListener('input',function(){p[fd.key]=this.value;save();});
+    box.appendChild(lbl);box.appendChild(ta);fieldWrap.appendChild(box);
+  });
+  content_el.appendChild(fieldWrap);
+}
+// ── 스토리 ──
+var curDreamTag = "전체";
+var curStoryFolder = null;
+
+function renderStoryFolders() {
+  var ch = getChar(curId); if (!ch) return;
+  var list = document.getElementById('story-folder-list'); list.innerHTML = '';
+  (ch.storyFolders || []).forEach(function(f) {
+    var d = document.createElement('div'); d.className = 'story-folder-item' + (f.id === curStoryFolder ? ' active' : '');
+    var name = document.createElement('span'); name.className = 'story-folder-item-name'; name.textContent = f.name || '폴더';
+    var del = document.createElement('span'); del.className = 'story-folder-item-del'; del.textContent = '×';
+    del.addEventListener('click', function(e) {
+      e.stopPropagation();
+      customConfirm('「' + f.name + '」 폴더를 삭제할까요?', function() {
+        ch.storyFolders = (ch.storyFolders || []).filter(function(x) { return x.id !== f.id; });
+        if (curStoryFolder === f.id) { curStoryFolder = null; renderStoryList(); }
+        save(); renderStoryFolders();
+      });
+    });
+    d.appendChild(name); d.appendChild(del);
+    d.addEventListener('click', function() { curStoryFolder = f.id; renderStoryFolders(); renderStoryList(); });
+    list.appendChild(d);
+  });
+}
+
+function renderStoryList() {
+  var ch = getChar(curId); if (!ch) return;
+  var list = document.getElementById('story-list'); list.innerHTML = '';
+  var addBtn = document.getElementById('story-add-btn');
+  var titleEl = document.getElementById('story-folder-title');
+  if (!curStoryFolder) {
+    addBtn.style.display = 'none'; titleEl.textContent = '폴더를 선택하세요';
+    list.innerHTML = '<div class="story-empty">왼쪽에서 폴더를 선택하거나 만들어보세요</div>'; return;
+  }
+  var folder = (ch.storyFolders || []).find(function(f) { return f.id === curStoryFolder; });
+  if (!folder) { curStoryFolder = null; renderStoryList(); return; }
+  titleEl.textContent = folder.name; addBtn.style.display = '';
+  var stories = folder.stories || [];
+  if (!stories.length) { list.innerHTML = '<div class="story-empty">+ 스토리 추가로 첫 스토리를 작성해보세요</div>'; return; }
+  stories.forEach(function(s) {
+    var card = document.createElement('div'); card.className = 'story-card';
+    // 삭제 버튼
+    var del = document.createElement('div'); del.className = 'story-card-del'; del.textContent = '×';
+    del.addEventListener('click', function() {
+      customConfirm('이 스토리를 삭제할까요?', function() {
+        folder.stories = (folder.stories || []).filter(function(x) { return x.id !== s.id; });
+        save(); renderStoryList();
+      });
+    });
+    // 제목 + 장르 행
+    var row = document.createElement('div'); row.className = 'story-card-row';
+    var titleInp = document.createElement('input'); titleInp.className = 'story-card-title';
+    titleInp.value = s.title || ''; titleInp.placeholder = '스토리 제목';
+    titleInp.addEventListener('input', function() { s.title = this.value; save(); });
+    var genreInp = document.createElement('input'); genreInp.className = 'story-card-genre';
+    genreInp.value = s.genre || ''; genreInp.placeholder = '장르 (판타지, 현대물...)';
+    genreInp.addEventListener('input', function() { s.genre = this.value; save(); });
+    row.appendChild(titleInp); row.appendChild(genreInp);
+    // 공동 등장 캐릭터
+    var charsInp = document.createElement('input'); charsInp.className = 'story-card-chars';
+    charsInp.value = s.chars || ''; charsInp.placeholder = '공동 등장 캐릭터';
+    charsInp.addEventListener('input', function() { s.chars = this.value; save(); });
+    // 본문
+    var body = document.createElement('textarea'); body.className = 'story-card-body';
+    body.value = s.text || ''; body.rows = 8; body.placeholder = '스토리 내용을 자유롭게 작성하세요...';
+    body.addEventListener('input', function() { s.text = this.value; save(); });
+    card.appendChild(del); card.appendChild(row); card.appendChild(charsInp); card.appendChild(body);
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('story-folder-add-btn').addEventListener('click', function() {
+  var ch = getChar(curId); if (!ch) return;
+  if (!ch.storyFolders) ch.storyFolders = [];
+  var nameEl = document.getElementById('story-folder-name-input');
+  var name = (nameEl ? nameEl.value : '').trim();
+  if (!name) { nameEl && nameEl.focus(); return; }
+  ch.storyFolders.push({ id: uid(), name: name, stories: [] });
+  if (nameEl) nameEl.value = '';
+  save(); renderStoryFolders();
+});
+document.getElementById('story-folder-name-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('story-folder-add-btn').click();
+});
+document.getElementById('story-add-btn').addEventListener('click', function() {
+  var ch = getChar(curId); if (!ch || !curStoryFolder) return;
+  var folder = (ch.storyFolders || []).find(function(f) { return f.id === curStoryFolder; });
+  if (!folder) return;
+  if (!folder.stories) folder.stories = [];
+  folder.stories.push({ id: uid(), title: '', genre: '', chars: '', text: '' });
+  save(); renderStoryList();
+  var items = document.getElementById('story-list').querySelectorAll('.story-card-title');
+  if (items.length) items[items.length - 1].focus();
+});
+
+
+function renderMemoTags(){
+  var ch=getChar(curId);if(!ch)return;
+  var toolbar=document.getElementById('memo-toolbar');if(!toolbar)return;
+  // 기존 동적 태그 제거 (전체 버튼 제외)
+  Array.from(toolbar.querySelectorAll('.tag-pill:not(#memo-tag-all)')).forEach(function(el){el.remove();});
+  var addBtn=document.getElementById('memo-add-btn');
+  // 태그 수집
+  var tags=[];
+  (ch.memos||[]).forEach(function(m){if(m.tag&&!tags.includes(m.tag))tags.push(m.tag);});
+  tags.forEach(function(tag){
+    var pill=document.createElement('div');pill.className='tag-pill';pill.textContent=tag;pill.dataset.tag=tag;
+    if(curMemoTag===tag)pill.classList.add('active');
+    pill.addEventListener('click',function(){
+      toolbar.querySelectorAll('.tag-pill').forEach(function(x){x.classList.remove('active');});
+      pill.classList.add('active');curMemoTag=tag;renderMemos();
+    });
+    toolbar.insertBefore(pill,addBtn);
+  });
+  // 전체 버튼 클릭
+  var allBtn=document.getElementById('memo-tag-all');
+  if(allBtn){
+    allBtn.classList.toggle('active',curMemoTag==='전체');
+    allBtn.onclick=function(){
+      toolbar.querySelectorAll('.tag-pill').forEach(function(x){x.classList.remove('active');});
+      allBtn.classList.add('active');curMemoTag='전체';renderMemos();
+    };
+  }
+}
+
+
+// ── 스토리 사이드바 리사이즈 ──
+var _rsHandle=document.getElementById('story-resize-handle');
+if(_rsHandle){
+  var _rsSidebar=document.getElementById('story-sidebar');
+  var _rsDragging=false,_rsStartX=0,_rsStartW=0;
+  _rsHandle.addEventListener('mousedown',function(e){
+    _rsDragging=true;_rsStartX=e.clientX;_rsStartW=_rsSidebar.offsetWidth;
+    document.body.style.cursor='col-resize';document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!_rsDragging)return;
+    var newW=Math.max(120,Math.min(400,_rsStartW+(e.clientX-_rsStartX)));
+    _rsSidebar.style.width=newW+'px';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!_rsDragging)return;
+    _rsDragging=false;document.body.style.cursor='';document.body.style.userSelect='';
+  });
+}
+
+document.getElementById('search').addEventListener('input',renderList);
+renderList();
+if(chars.length>0)selectChar(chars[0].id);
+})();
+</script>
+</body>
+</html>
