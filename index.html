@@ -1185,15 +1185,119 @@ function drawGraph(){
   canvas.width=wrap.clientWidth||600;canvas.height=wrap.clientHeight||380;
   panX=0;panY=0;initNodes();renderGraph();updateRelLegend();
 }
+var draggingLabel=null,labelDragOffX=0,labelDragOffY=0;
+
+function drawArrow(ctx,x1,y1,x2,y2,color,nodeR){
+  var angle=Math.atan2(y2-y1,x2-x1);
+  var ex=x2-nodeR*Math.cos(angle);
+  var ey=y2-nodeR*Math.sin(angle);
+  var sx=x1+nodeR*Math.cos(angle);
+  var sy=y1+nodeR*Math.sin(angle);
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
+  // 화살촉
+  var hs=8;
+  ctx.beginPath();
+  ctx.moveTo(ex,ey);
+  ctx.lineTo(ex-hs*Math.cos(angle-Math.PI/6),ey-hs*Math.sin(angle-Math.PI/6));
+  ctx.lineTo(ex-hs*Math.cos(angle+Math.PI/6),ey-hs*Math.sin(angle+Math.PI/6));
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
+}
+
 function renderGraph(){
-  rctx.clearRect(0,0,canvas.width,canvas.height);rctx.save();rctx.translate(panX,panY);
+  rctx.clearRect(0,0,canvas.width,canvas.height);
+  rctx.save();rctx.translate(panX,panY);
   if(!curId){rctx.restore();return;}
-  rels.filter(function(r){return r.from===curId||r.to===curId;}).forEach(function(r){
-    var n1=nodes[r.from],n2=nodes[r.to];if(!n1||!n2)return;
-    rctx.beginPath();rctx.moveTo(n1.x,n1.y);rctx.lineTo(n2.x,n2.y);
-    rctx.strokeStyle=r.ext?'rgba(100,100,100,0.2)':getRelColor(r.type,true);rctx.lineWidth=r.ext?1:2;rctx.stroke();
-    if(r.type){rctx.fillStyle=r.ext?'rgba(100,100,100,0.6)':getRelColor(r.type,false);rctx.font='10px Noto Serif KR';rctx.textAlign='center';rctx.fillText(r.type,(n1.x+n2.x)/2,(n1.y+n2.y)/2-5);}
+
+  var myRels=rels.filter(function(r){return r.from===curId||r.to===curId;});
+
+  // 같은 쌍 사이 관계 그룹핑
+  var pairMap={};
+  myRels.forEach(function(r){
+    var a=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;
+    if(!pairMap[a])pairMap[a]=[];
+    pairMap[a].push(r);
   });
+
+  myRels.forEach(function(r){
+    var n1=nodes[r.from],n2=nodes[r.to];if(!n1||!n2)return;
+    var isExt=r.ext;
+    var color=isExt?'rgba(100,100,100,0.25)':getRelColor(r.type,true);
+    var colorSolid=isExt?'rgba(100,100,100,0.6)':getRelColor(r.type,false);
+    var dir=r.dir||'both';
+    var rFrom=nodes[r.from]&&nodes[r.from].main?28:20;
+    var rTo=nodes[r.to]&&nodes[r.to].main?28:20;
+
+    // 같은 쌍에 관계가 몇 개인지, 몇 번째인지
+    var pairKey=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;
+    var pairList=pairMap[pairKey]||[r];
+    var pairIdx=pairList.findIndex(function(x){return x.id===r.id;});
+    var pairCount=pairList.length;
+
+    var dx=n2.x-n1.x,dy=n2.y-n1.y;
+    var dist=Math.sqrt(dx*dx+dy*dy)||1;
+    var nx=-dy/dist,ny=dx/dist; // 법선벡터
+
+    // 여러 관계면 곡선 제어점을 옆으로 오프셋
+    var offset=0;
+    if(pairCount>1){
+      offset=(pairIdx-(pairCount-1)/2)*28;
+    }
+    var cx=(n1.x+n2.x)/2+nx*offset;
+    var cy=(n1.y+n2.y)/2+ny*offset;
+
+    rctx.save();
+    rctx.strokeStyle=color;
+    rctx.lineWidth=isExt?1:1.8;
+
+    if(pairCount>1){
+      // 베지어 곡선
+      rctx.beginPath();rctx.moveTo(n1.x,n1.y);
+      rctx.quadraticCurveTo(cx,cy,n2.x,n2.y);
+      rctx.stroke();
+      // 화살표 (곡선 끝 방향)
+      if(!isExt&&dir!=='both'){
+        var t=0.85;
+        var ax=2*(1-t)*(cx-n1.x)+2*t*(n2.x-cx);
+        var ay=2*(1-t)*(cy-n1.y)+2*t*(n2.y-cy);
+        var angle=Math.atan2(ay,ax);
+        var ex,ey,sx2,sy2;
+        if(dir==='from'){
+          ex=n2.x-rTo*Math.cos(angle);ey=n2.y-rTo*Math.sin(angle);
+          drawArrowHead(rctx,ex,ey,angle,colorSolid);
+        } else {
+          var angle2=Math.atan2(-ay,-ax);
+          ex=n1.x-rFrom*Math.cos(angle2);ey=n1.y-rFrom*Math.sin(angle2);
+          drawArrowHead(rctx,ex,ey,angle2,colorSolid);
+        }
+      }
+    } else {
+      // 직선
+      if(isExt||dir==='both'){
+        rctx.beginPath();rctx.moveTo(n1.x,n1.y);rctx.lineTo(n2.x,n2.y);rctx.stroke();
+      } else if(dir==='from'){
+        drawArrow(rctx,n1.x,n1.y,n2.x,n2.y,colorSolid,rTo);
+      } else {
+        drawArrow(rctx,n2.x,n2.y,n1.x,n1.y,colorSolid,rFrom);
+      }
+    }
+    rctx.restore();
+
+    // 라벨
+    if(r.type){
+      var lx=cx+(r.labelOffsetX||0);
+      var ly=cy+(r.labelOffsetY||0);
+      rctx.font='10px Noto Serif KR';
+      var tw=rctx.measureText(r.type).width;
+      rctx.fillStyle='rgba(251,246,238,0.88)';
+      rctx.fillRect(lx-tw/2-3,ly-7,tw+6,14);
+      rctx.fillStyle=colorSolid;
+      rctx.textAlign='center';rctx.textBaseline='middle';
+      rctx.fillText(r.type,lx,ly);
+    }
+  });
+
+  // 노드
   Object.values(nodes).forEach(function(n){
     var r=n.main?28:20;
     var ch=n.ext?null:getChar(n.id);
@@ -1205,11 +1309,22 @@ function renderGraph(){
     rctx.restore();
     if(n.main){rctx.beginPath();rctx.arc(n.x,n.y,r+3,0,Math.PI*2);rctx.strokeStyle='rgba(168,104,72,0.5)';rctx.lineWidth=2;rctx.stroke();}
     if(n.ext){rctx.beginPath();rctx.arc(n.x,n.y,r,0,Math.PI*2);rctx.strokeStyle='rgba(150,150,150,0.5)';rctx.lineWidth=1.5;rctx.setLineDash([3,3]);rctx.stroke();rctx.setLineDash([]);}
-    if(!(ch&&ch.img)){rctx.fillStyle='#fff';rctx.font=(n.main?'600 ':'')+'12px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='middle';rctx.fillText(name[0],n.x,n.y);}
-    rctx.fillStyle='#5A4A38';rctx.font='11px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='top';rctx.fillText(name,n.x,n.y+r+4);
+    if(!(ch&&ch.img)){rctx.fillStyle='#fff';rctx.font=(n.main?'600 ':'')+'12px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='middle';rctx.fillText(name[0]||'?',n.x,n.y);}
+    rctx.fillStyle='#5A4A38';rctx.font='11px Noto Serif KR';rctx.textAlign='center';rctx.textBaseline='top';
+    rctx.fillText(name,n.x,n.y+r+4);
   });
   rctx.restore();
 }
+
+function drawArrowHead(ctx,x,y,angle,color){
+  var hs=8;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x-hs*Math.cos(angle-Math.PI/6),y-hs*Math.sin(angle-Math.PI/6));
+  ctx.lineTo(x-hs*Math.cos(angle+Math.PI/6),y-hs*Math.sin(angle+Math.PI/6));
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
+}
+
 function updateRelLegend(){
   var legend=document.getElementById('rel-legend');if(!legend)return;legend.innerHTML='';
   var shown={};
@@ -1223,30 +1338,94 @@ function updateRelLegend(){
 }
 canvas.addEventListener('mousedown',function(e){
   var rect=canvas.getBoundingClientRect();var mx=e.clientX-rect.left-panX,my=e.clientY-rect.top-panY;
+  // 라벨 히트 테스트
+  var foundLabel=null;
+  var myRels2=rels.filter(function(r){return r.from===curId||r.to===curId;});
+  var pairMap2={};
+  myRels2.forEach(function(r){var a=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;if(!pairMap2[a])pairMap2[a]=[];pairMap2[a].push(r);});
+  myRels2.filter(function(r){return r.type;}).forEach(function(r){
+    var n1=nodes[r.from],n2=nodes[r.to];if(!n1||!n2)return;
+    var pairKey=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;
+    var pairList=pairMap2[pairKey]||[r];
+    var pairIdx=pairList.findIndex(function(x){return x.id===r.id;});
+    var pairCount=pairList.length;
+    var dx=n2.x-n1.x,dy=n2.y-n1.y,dist=Math.sqrt(dx*dx+dy*dy)||1;
+    var nx=-dy/dist,ny=dx/dist;
+    var offset=pairCount>1?(pairIdx-(pairCount-1)/2)*28:0;
+    var baseLx=(n1.x+n2.x)/2+nx*offset;
+    var baseLy=(n1.y+n2.y)/2+ny*offset;
+    var lx=baseLx+(r.labelOffsetX||0);
+    var ly=baseLy+(r.labelOffsetY||0);
+    if(Math.abs(mx-lx)<30&&Math.abs(my-ly)<10)foundLabel={r:r,baseLx:baseLx,baseLy:baseLy};
+  });
+  if(foundLabel){
+    draggingLabel=foundLabel.r;
+    labelDragOffX=mx-(foundLabel.baseLx+(draggingLabel.labelOffsetX||0));
+    labelDragOffY=my-(foundLabel.baseLy+(draggingLabel.labelOffsetY||0));
+    canvas.classList.add('dragging');return;
+  }
   var found=null;Object.values(nodes).forEach(function(n){if(Math.hypot(n.x-mx,n.y-my)<(n.main?28:20))found=n;});
   if(found){dragging=found;dragOffX=mx-found.x;dragOffY=my-found.y;canvas.classList.add('dragging');}
   else{isPanning=true;panSX=e.clientX-panX;panSY=e.clientY-panY;canvas.classList.add('dragging');}
 });
 canvas.addEventListener('mousemove',function(e){
-  if(dragging){var rect=canvas.getBoundingClientRect();dragging.x=e.clientX-rect.left-panX-dragOffX;dragging.y=e.clientY-rect.top-panY-dragOffY;renderGraph();}
+  if(draggingLabel){
+    var rect2=canvas.getBoundingClientRect();var mx2=e.clientX-rect2.left-panX,my2=e.clientY-rect2.top-panY;
+    var n1=nodes[draggingLabel.from],n2=nodes[draggingLabel.to];if(n1&&n2){
+      var pairKey2=draggingLabel.from<draggingLabel.to?draggingLabel.from+'_'+draggingLabel.to:draggingLabel.to+'_'+draggingLabel.from;
+      var myRels3=rels.filter(function(r){return r.from===curId||r.to===curId;});
+      var pList=(myRels3.filter(function(r){var k=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;return k===pairKey2;}));
+      var pIdx=pList.findIndex(function(x){return x.id===draggingLabel.id;});
+      var pCnt=pList.length;
+      var dx=n2.x-n1.x,dy=n2.y-n1.y,dist=Math.sqrt(dx*dx+dy*dy)||1;
+      var nnx=-dy/dist,nny=dx/dist;
+      var off=pCnt>1?(pIdx-(pCnt-1)/2)*28:0;
+      var baseLx=(n1.x+n2.x)/2+nnx*off;
+      var baseLy=(n1.y+n2.y)/2+nny*off;
+      draggingLabel.labelOffsetX=mx2-labelDragOffX-baseLx;
+      draggingLabel.labelOffsetY=my2-labelDragOffY-baseLy;
+      save();renderGraph();}
+  } else if(dragging){var rect=canvas.getBoundingClientRect();dragging.x=e.clientX-rect.left-panX-dragOffX;dragging.y=e.clientY-rect.top-panY-dragOffY;renderGraph();}
   else if(isPanning){panX=e.clientX-panSX;panY=e.clientY-panSY;renderGraph();}
 });
-window.addEventListener('mouseup',function(){dragging=null;isPanning=false;canvas.classList.remove('dragging');});
+window.addEventListener('mouseup',function(){dragging=null;isPanning=false;draggingLabel=null;canvas.classList.remove('dragging');});
 
 function renderRelTables(){
   var myRels=rels.filter(function(r){return(r.from===curId||r.to===curId)&&!r.ext;});
   var extRels=rels.filter(function(r){return r.from===curId&&r.ext;});
-  function makeRow(tbody,cols,rid){
-    var tr=document.createElement('tr');
-    cols.forEach(function(c){var td=document.createElement('td');td.innerHTML=c;tr.appendChild(td);});
-    var delTd=document.createElement('td');var delBtn=document.createElement('span');delBtn.className='del-rel';delBtn.textContent='×';
-    delBtn.addEventListener('click',function(){rels=rels.filter(function(x){return x.id!==rid;});save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,20);});
-    delTd.appendChild(delBtn);tr.appendChild(delTd);tbody.appendChild(tr);
-  }
   var tbodyMy=document.getElementById('rel-tbody-my');tbodyMy.innerHTML='';
-  myRels.forEach(function(r){var oid=r.from===curId?r.to:r.from;var other=getChar(oid);makeRow(tbodyMy,[(other?esc(other.name):'알 수 없음'),'<span class="rel-tag">'+esc(r.type||'')+'</span>',esc(r.desc||'')],r.id);});
+  myRels.forEach(function(r){
+    var oid=r.from===curId?r.to:r.from;
+    var other=getChar(oid);
+    var rid=r.id;
+    var dir=r.dir||'both';
+    var dirLabel=dir==='both'?'↔':dir==='from'?'→':'←';
+    var dirTitle=dir==='both'?'양방향':dir==='from'?'내 캐릭터 → 상대':'상대 → 내 캐릭터';
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+(other?esc(other.name):'알 수 없음')+'</td>'
+      +'<td><span class="rel-tag">'+esc(r.type||'')+'</span> <span title="'+dirTitle+'" style="font-size:11px;color:var(--text-dim)">'+dirLabel+'</span></td>'
+      +'<td>'+esc(r.desc||'')+'</td>'
+      +'<td><span class="del-rel">×</span></td>';
+    tr.querySelector('.del-rel').addEventListener('click',function(){
+      rels=rels.filter(function(x){return x.id!==rid;});
+      save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,20);
+    });
+    tbodyMy.appendChild(tr);
+  });
   var tbodyExt=document.getElementById('rel-tbody-ext');tbodyExt.innerHTML='';
-  extRels.forEach(function(r){makeRow(tbodyExt,[esc(r.extName||'')+'<span class="rel-ext-badge">외부</span>','<span class="rel-tag">'+esc(r.type||'')+'</span>',esc(r.desc||'')],r.id);});
+  extRels.forEach(function(r){
+    var rid=r.id;
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+esc(r.extName||'')+'<span class="rel-ext-badge">외부</span></td>'
+      +'<td><span class="rel-tag">'+esc(r.type||'')+'</span></td>'
+      +'<td>'+esc(r.desc||'')+'</td>'
+      +'<td><span class="del-rel">×</span></td>';
+    tr.querySelector('.del-rel').addEventListener('click',function(){
+      rels=rels.filter(function(x){return x.id!==rid;});
+      save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,20);
+    });
+    tbodyExt.appendChild(tr);
+  });
 }
 document.querySelectorAll('.rel-view-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
@@ -1261,10 +1440,12 @@ document.getElementById('rel-add-my-btn').addEventListener('click',function(){
   if(!others.length){alert('다른 캐릭터가 1명 이상 필요해요!');return;}
   openModal('내 캐릭터 관계 추가',function(body){
     var opts=others.map(function(c){return '<option value="'+c.id+'">'+esc(c.name)+'</option>';}).join('');
-    body.innerHTML='<div class="modal-field"><label>상대 캐릭터</label><select id="m-target">'+opts+'</select></div><div class="modal-field"><label>관계 유형</label><input id="m-reltype" type="text" placeholder="관계 유형"></div><div class="modal-field"><label>설명 (선택)</label><textarea id="m-reldesc" rows="3" placeholder="관계 설명..."></textarea></div>';
+    body.innerHTML='<div class="modal-field"><label>상대 캐릭터</label><select id="m-target">'+opts+'</select></div><div class="modal-field"><label>방향 (누가 누구에게)</label><select id="m-direction"><option value="from">내 캐릭터 → 상대</option><option value="to">상대 → 내 캐릭터</option><option value="both">양방향</option></select></div><div class="modal-field"><label>관계 유형</label><input id="m-reltype" type="text" placeholder="관계 유형"></div><div class="modal-field"><label>설명 (선택)</label><textarea id="m-reldesc" rows="3" placeholder="관계 설명..."></textarea></div>';
   },function(){
     var tEl=document.getElementById('m-target');if(!tEl||!tEl.value)return false;
-    rels.push({id:uid(),from:curId,to:tEl.value,type:(document.getElementById('m-reltype')||{}).value||'',desc:(document.getElementById('m-reldesc')||{}).value||'',ext:false});
+    var dirEl=document.getElementById('m-direction');
+    var dir=dirEl?dirEl.value:'from';
+    rels.push({id:uid(),from:curId,to:tEl.value,type:(document.getElementById('m-reltype')||{}).value||'',desc:(document.getElementById('m-reldesc')||{}).value||'',ext:false,dir:dir,labelOffsetX:0,labelOffsetY:0});
     save();renderRelTables();if(relView==='graph')setTimeout(drawGraph,30);return true;
   });
 });
