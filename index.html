@@ -376,6 +376,45 @@ textarea.field-input{min-height:52px;line-height:1.7}
 .drag-handle:hover{color:var(--gold)}
 
 
+
+/* 설정 패널 */
+#settings-btn{padding:5px 10px;border:1px solid var(--border);border-radius:3px;background:#fff;color:var(--text-muted);cursor:pointer;font-size:11px;font-family:'Noto Serif KR',serif;transition:all .15s;margin-top:4px;width:100%}
+#settings-btn:hover{border-color:var(--gold);color:var(--gold)}
+#settings-panel{display:none;padding:10px 12px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0}
+#settings-panel.open{display:block}
+.settings-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.settings-label{font-size:10px;color:var(--text-dim);letter-spacing:1px;width:60px;flex-shrink:0}
+.settings-control{flex:1;display:flex;gap:5px;align-items:center}
+.sz-btn{width:24px;height:24px;border:1px solid var(--border);border-radius:3px;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all .15s}
+.sz-btn:hover{border-color:var(--gold);color:var(--gold)}
+.sz-val{font-size:11px;color:var(--text-muted);min-width:28px;text-align:center}
+.font-select{flex:1;background:#fff;border:1px solid var(--border);border-radius:3px;padding:4px 6px;font-size:11px;color:var(--text-muted);font-family:'Noto Serif KR',serif}
+.font-select:focus{outline:none;border-color:var(--gold)}
+.accent-picks{display:flex;gap:4px;flex-wrap:wrap}
+.accent-pick{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.accent-pick:hover,.accent-pick.active{border-color:var(--text)}
+/* 모바일 */
+@media(max-width:640px){
+  #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  #sidebar{border-right:none;border-bottom:1px solid var(--border);max-height:200px}
+  #char-list{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:4px;gap:4px}
+  .char-item{flex-direction:column;min-width:60px;padding:6px 4px;text-align:center;gap:3px}
+  .char-info{display:none}
+  .char-del{display:none}
+  #io-bar{flex-wrap:wrap}
+  .io-btn{flex:1;text-align:center}
+  #main-tabs{font-size:9px}
+  .mtab{padding:8px 10px;font-size:9px;letter-spacing:1px}
+  #settings-panel .settings-row{flex-wrap:wrap}
+  #tab-profile{padding:12px}
+  .fields-grid,.fields-grid-3{grid-template-columns:1fr}
+  .field-box.wide{grid-column:1}
+  .psy-grid{grid-template-columns:1fr}
+  #pairs-left{width:140px}
+  #story-sidebar{width:140px}
+  #rel-canvas-wrap{min-height:250px}
+}
+
 /* 모달 */
 #modal-overlay{position:fixed;inset:0;background:rgba(42,32,24,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
 #modal{background:#fff;border:1px solid var(--border);border-radius:8px;padding:22px;min-width:340px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(42,32,24,0.12);max-height:90vh;overflow-y:auto}
@@ -444,6 +483,12 @@ textarea.field-input{min-height:52px;line-height:1.7}
     <div id="io-bar">
       <button class="io-btn" id="export-btn">💾 이 캐릭터 내보내기</button>
       <button class="io-btn" id="import-btn">📂 캐릭터 불러오기</button>
+    </div>
+    <button id="settings-btn">⚙ 설정</button>
+    <div id="settings-panel">
+      <div class="settings-row"><span class="settings-label">글자 크기</span><div class="settings-control"><button class="sz-btn" id="sz-down">−</button><span class="sz-val" id="sz-val">14px</span><button class="sz-btn" id="sz-up">+</button></div></div>
+      <div class="settings-row"><span class="settings-label">폰트</span><div class="settings-control"><select class="font-select" id="font-select"><option value="Noto Serif KR">명조 (기본)</option><option value="sans-serif">고딕</option><option value="Georgia">Georgia</option></select></div></div>
+      <div class="settings-row"><span class="settings-label">포인트 색</span><div class="settings-control"><div class="accent-picks" id="accent-picks"></div></div></div>
     </div>
   </div>
   <div id="main">
@@ -1793,6 +1838,48 @@ function makeDraggable(container, getArray, saveAndRender) {
   observer.observe(container, { childList: true });
   updateHandlers();
 }
+
+
+// ── 설정 패널 ──
+var ACCENT_COLORS=['#A86848','#7B5EA7','#3B7DD8','#2E8B57','#C04040','#B07020','#888888'];
+var appSettings={fontSize:14,font:'Noto Serif KR',accent:'#A86848'};
+try{var sv=localStorage.getItem('ca_settings');if(sv)appSettings=Object.assign(appSettings,JSON.parse(sv));}catch(e){}
+
+function applySettings(){
+  document.body.style.fontSize=appSettings.fontSize+'px';
+  document.body.style.fontFamily="'"+appSettings.font+"', serif";
+  document.documentElement.style.setProperty('--gold', appSettings.accent);
+  // gold-lt 계산 (약간 밝게)
+  document.documentElement.style.setProperty('--gold-lt', appSettings.accent+'CC');
+  document.getElementById('sz-val').textContent=appSettings.fontSize+'px';
+  document.getElementById('font-select').value=appSettings.font;
+  document.getElementById('accent-picks').querySelectorAll('.accent-pick').forEach(function(el){
+    el.classList.toggle('active',el.dataset.color===appSettings.accent);
+  });
+  try{localStorage.setItem('ca_settings',JSON.stringify(appSettings));}catch(e){}
+}
+
+document.getElementById('settings-btn').addEventListener('click',function(){
+  document.getElementById('settings-panel').classList.toggle('open');
+});
+document.getElementById('sz-up').addEventListener('click',function(){
+  appSettings.fontSize=Math.min(20,appSettings.fontSize+1);applySettings();
+});
+document.getElementById('sz-down').addEventListener('click',function(){
+  appSettings.fontSize=Math.max(11,appSettings.fontSize-1);applySettings();
+});
+document.getElementById('font-select').addEventListener('change',function(){
+  appSettings.font=this.value;applySettings();
+});
+
+var accentPicks=document.getElementById('accent-picks');
+ACCENT_COLORS.forEach(function(c){
+  var d=document.createElement('div');d.className='accent-pick';d.style.background=c;d.dataset.color=c;
+  d.addEventListener('click',function(){appSettings.accent=c;applySettings();});
+  accentPicks.appendChild(d);
+});
+
+applySettings();
 
 document.getElementById('search').addEventListener('input',renderList);
 renderList();
