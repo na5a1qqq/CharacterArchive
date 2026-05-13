@@ -415,6 +415,30 @@ textarea.field-input{min-height:52px;line-height:1.7}
   #rel-canvas-wrap{min-height:250px}
 }
 
+
+/* contenteditable 공통 */
+.ce-field{width:100%;background:transparent;border:none;font-size:inherit;color:var(--text);font-family:inherit;resize:none;min-height:52px;line-height:1.8;outline:none;word-break:break-all;white-space:pre-wrap}
+.ce-field:empty::before{content:attr(data-placeholder);color:var(--text-dim);pointer-events:none}
+.ce-field:focus{outline:none}
+/* 볼드 플로팅 툴바 */
+#bold-toolbar{position:fixed;display:none;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);padding:3px 5px;gap:3px;z-index:9990;align-items:center}
+#bold-toolbar.show{display:flex}
+.bt-btn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:transparent;cursor:pointer;font-size:11px;color:var(--text-muted);font-family:inherit;transition:all .15s}
+.bt-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
+.bt-btn.active{background:var(--gold);color:#fff;border-color:var(--gold)}
+
+
+#sidebar{position:relative}
+#sidebar-resize-handle{
+  position:absolute;top:0;right:-4px;width:8px;height:100%;
+  cursor:col-resize;z-index:100;
+}
+#sidebar-resize-handle::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:2px;height:40px;background:var(--border);border-radius:1px;
+}
+#sidebar-resize-handle:hover::after{background:var(--gold);}
+
 /* 모달 */
 #modal-overlay{position:fixed;inset:0;background:rgba(42,32,24,0.45);display:none;align-items:center;justify-content:center;z-index:9999}
 #modal{background:#fff;border:1px solid var(--border);border-radius:8px;padding:22px;min-width:340px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(42,32,24,0.12);max-height:90vh;overflow-y:auto}
@@ -440,6 +464,8 @@ textarea.field-input{min-height:52px;line-height:1.7}
 </style>
 </head>
 <body>
+<div id="bold-toolbar"><button class="bt-btn" id="bt-bold" title="굵게"><b>B</b></button><button class="bt-btn" id="bt-italic" title="기울임"><i>I</i></button><button class="bt-btn" id="bt-underline" title="밑줄"><u>U</u></button></div>
+<input id="font-file-input" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none;position:absolute">
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none;position:absolute;visibility:hidden">
 <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;position:absolute;visibility:hidden">
 <input type="color" id="palette-color-input" style="display:none;position:absolute;visibility:hidden">
@@ -487,9 +513,10 @@ textarea.field-input{min-height:52px;line-height:1.7}
     <button id="settings-btn">⚙ 설정</button>
     <div id="settings-panel">
       <div class="settings-row"><span class="settings-label">글자 크기</span><div class="settings-control"><button class="sz-btn" id="sz-down">−</button><span class="sz-val" id="sz-val">14px</span><button class="sz-btn" id="sz-up">+</button></div></div>
-      <div class="settings-row"><span class="settings-label">폰트</span><div class="settings-control"><select class="font-select" id="font-select"><option value="Noto Serif KR">명조 (기본)</option><option value="sans-serif">고딕</option><option value="Georgia">Georgia</option></select></div></div>
-      <div class="settings-row"><span class="settings-label">포인트 색</span><div class="settings-control"><div class="accent-picks" id="accent-picks"></div></div></div>
+      <div class="settings-row"><span class="settings-label">폰트</span><div class="settings-control"><select class="font-select" id="font-select"><option value="Noto Serif KR">명조 (기본)</option><option value="sans-serif">고딕</option><option value="Georgia">Georgia</option><option value="custom" id="custom-font-opt" style="display:none">업로드한 폰트</option></select><button class="sz-btn" id="font-upload-btn" style="width:auto;padding:0 8px;margin-left:4px" title="폰트 파일 업로드">📁</button></div></div>
+      <div class="settings-row"><span class="settings-label">글자 색</span><div class="settings-control"><div class="accent-picks" id="accent-picks"></div></div></div>
     </div>
+    <div id="sidebar-resize-handle"></div>
   </div>
   <div id="main">
     <div id="empty"><div id="empty-icon">✦</div><p>캐릭터를 선택하거나 추가하세요</p></div>
@@ -556,37 +583,37 @@ textarea.field-input{min-height:52px;line-height:1.7}
 
           <div class="section-label">외형</div>
           <div class="fields-grid">
-            <div class="field-box wide"><div class="field-label">전체 외형</div><textarea class="field-input" id="pf-appear" placeholder="머리색, 눈색, 전반적인 인상..."></textarea></div>
-            <div class="field-box"><div class="field-label">첫인상을 결정짓는 포인트</div><textarea class="field-input" id="pf-firstlook" placeholder="첫눈에 눈에 띄는 포인트"></textarea></div>
-            <div class="field-box"><div class="field-label">자주 짓는 표정 / 몸짓 버릇</div><textarea class="field-input" id="pf-habit" placeholder="무의식적인 동작, 자주 하는 표정"></textarea></div>
-            <div class="field-box"><div class="field-label">상처 / 신체적 특이점</div><textarea class="field-input" id="pf-scar" placeholder="흉터, 점, 신체적 특이점"></textarea></div>
-            <div class="field-box"><div class="field-label">즐겨 입는 스타일 / 애착 아이템</div><textarea class="field-input" id="pf-style" placeholder="자주 입는 옷 스타일, 항상 지니는 것"></textarea></div>
-            <div class="field-box"><div class="field-label">감정 격해질 때 몸/표정 변화</div><textarea class="field-input" id="pf-emotion" placeholder="감정이 격해질 때 몸이나 표정이 어떻게 변하는지"></textarea></div>
+            <div class="field-box wide"><div class="field-label">전체 외형</div><div class="field-input ce-field" id="pf-appear" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">첫인상을 결정짓는 포인트</div><div class="field-input ce-field" id="pf-firstlook" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">자주 짓는 표정 / 몸짓 버릇</div><div class="field-input ce-field" id="pf-habit" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">상처 / 신체적 특이점</div><div class="field-input ce-field" id="pf-scar" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">즐겨 입는 스타일 / 애착 아이템</div><div class="field-input ce-field" id="pf-style" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">감정 격해질 때 몸/표정 변화</div><div class="field-input ce-field" id="pf-emotion" contenteditable="true" data-placeholder=""></div></div>
           </div>
 
           <div class="section-label">성격</div>
           <div class="fields-grid">
-            <div class="field-box wide"><div class="field-label">전반적인 성격 / 말투</div><textarea class="field-input" id="pf-personality" placeholder="성격 특징, 말투, 버릇..."></textarea></div>
-            <div class="field-box"><div class="field-label">평소 모습 vs 본모습의 괴리</div><textarea class="field-input" id="pf-gap" placeholder="겉으로 보이는 모습과 실제가 다른 점"></textarea></div>
-            <div class="field-box"><div class="field-label">스트레스 상황에서의 반응</div><textarea class="field-input" id="pf-stress" placeholder="압박받거나 스트레스 받을 때 반응"></textarea></div>
-            <div class="field-box"><div class="field-label">타인에게 보이고 싶은 이미지</div><textarea class="field-input" id="pf-selfimage" placeholder="타인에게 원하는 자기 이미지"></textarea></div>
-            <div class="field-box"><div class="field-label">절대 양보 못 하는 것</div><textarea class="field-input" id="pf-nonneg" placeholder="절대 타협하지 않는 것"></textarea></div>
-            <div class="field-box"><div class="field-label">처음 만났을 때 vs 친해졌을 때</div><textarea class="field-input" id="pf-closediff" placeholder="낯선 사람 vs 친한 사람에게 다른 점"></textarea></div>
+            <div class="field-box wide"><div class="field-label">전반적인 성격 / 말투</div><div class="field-input ce-field" id="pf-personality" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">평소 모습 vs 본모습의 괴리</div><div class="field-input ce-field" id="pf-gap" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">스트레스 상황에서의 반응</div><div class="field-input ce-field" id="pf-stress" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">타인에게 보이고 싶은 이미지</div><div class="field-input ce-field" id="pf-selfimage" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">절대 양보 못 하는 것</div><div class="field-input ce-field" id="pf-nonneg" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">처음 만났을 때 vs 친해졌을 때</div><div class="field-input ce-field" id="pf-closediff" contenteditable="true" data-placeholder=""></div></div>
           </div>
 
           <div class="section-label">능력</div>
           <div class="fields-grid">
-            <div class="field-box wide"><div class="field-label">주력 능력 / 기술</div><textarea class="field-input" id="pf-ability" placeholder="주력으로 사용하는 능력이나 기술"></textarea></div>
-            <div class="field-box"><div class="field-label">능력의 한계 / 대가</div><textarea class="field-input" id="pf-ablimit" placeholder="능력의 제한, 부작용, 대가"></textarea></div>
-            <div class="field-box"><div class="field-label">습득 경위</div><textarea class="field-input" id="pf-abhow" placeholder="어떻게 얻게 됐는지"></textarea></div>
-            <div class="field-box"><div class="field-label">잠재력 / 숨겨진 약점</div><textarea class="field-input" id="pf-abhidden" placeholder="아직 발현되지 않은 잠재력이나 약점"></textarea></div>
-            <div class="field-box"><div class="field-label">능력 사용 시 변화</div><textarea class="field-input" id="pf-abchange" placeholder="능력 사용 시 나타나는 신체적·감정적 변화"></textarea></div>
+            <div class="field-box wide"><div class="field-label">주력 능력 / 기술</div><div class="field-input ce-field" id="pf-ability" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">능력의 한계 / 대가</div><div class="field-input ce-field" id="pf-ablimit" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">습득 경위</div><div class="field-input ce-field" id="pf-abhow" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">잠재력 / 숨겨진 약점</div><div class="field-input ce-field" id="pf-abhidden" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box"><div class="field-label">능력 사용 시 변화</div><div class="field-input ce-field" id="pf-abchange" contenteditable="true" data-placeholder=""></div></div>
           </div>
 
           <div class="section-label">기타</div>
           <div class="fields-grid">
-            <div class="field-box wide"><div class="field-label">좋아하는 것 / 싫어하는 것</div><textarea class="field-input" id="pf-likes" placeholder="좋아하는 것, 싫어하는 것, 취미..."></textarea></div>
-            <div class="field-box wide"><div class="field-label">기타 메모</div><textarea class="field-input" id="pf-etc" placeholder="비밀, 트리거, 특이사항..."></textarea></div>
+            <div class="field-box wide"><div class="field-label">좋아하는 것 / 싫어하는 것</div><div class="field-input ce-field" id="pf-likes" contenteditable="true" data-placeholder=""></div></div>
+            <div class="field-box wide"><div class="field-label">기타 메모</div><div class="field-input ce-field" id="pf-etc" contenteditable="true" data-placeholder=""></div></div>
           </div>
         </div>
 
@@ -1171,9 +1198,8 @@ function renderDreamList(){
     dHandle.style.cssText='position:absolute;top:14px;left:6px;z-index:1';
     card.appendChild(dHandle);
     top.appendChild(tagSpan);top.appendChild(titleInp);top.appendChild(dateEl);top.appendChild(del);
-    var ta=document.createElement('textarea');ta.className='dream-card-text';ta.value=d.text||'';ta.rows=5;
-    ta.placeholder='썰 내용을 자유롭게 작성하세요...';
-    ta.addEventListener('input',function(){d.text=this.value;save();});
+    var ta=makeCE('div','dream-card-text','썰 내용을 자유롭게 작성하세요...',5);ceSet(ta,d.text||'');
+    ceOnInput(ta,function(v){d.text=v;save();});
     card.appendChild(top);card.appendChild(ta);
     list.appendChild(card);
   });
@@ -1841,20 +1867,38 @@ function makeDraggable(container, getArray, saveAndRender) {
 
 
 // ── 설정 패널 ──
-var ACCENT_COLORS=['#A86848','#7B5EA7','#3B7DD8','#2E8B57','#C04040','#B07020','#888888'];
-var appSettings={fontSize:14,font:'Noto Serif KR',accent:'#A86848'};
-try{var sv=localStorage.getItem('ca_settings');if(sv)appSettings=Object.assign(appSettings,JSON.parse(sv));}catch(e){}
+var ACCENT_COLORS=['#111111','#CC0000','#E07000','#C8A800','#228822','#0055CC','#220088','#880044'];
+var appSettings={fontSize:14,font:'Noto Serif KR',textColor:'#2A2018'};
+try{var sv=localStorage.getItem('ca_settings');if(sv)appSettings=Object.assign({fontSize:14,font:'Noto Serif KR',textColor:'#2A2018'},JSON.parse(sv));}catch(e){}
 
 function applySettings(){
-  document.body.style.fontSize=appSettings.fontSize+'px';
-  document.body.style.fontFamily="'"+appSettings.font+"', serif";
-  document.documentElement.style.setProperty('--gold', appSettings.accent);
-  // gold-lt 계산 (약간 밝게)
-  document.documentElement.style.setProperty('--gold-lt', appSettings.accent+'CC');
-  document.getElementById('sz-val').textContent=appSettings.fontSize+'px';
-  document.getElementById('font-select').value=appSettings.font;
+  // 글자 크기 - 모든 입력/텍스트 요소에 직접 적용
+  var sz=appSettings.fontSize+'px';
+  document.documentElement.style.setProperty('--app-font-size', sz);
+  document.body.style.fontSize=sz;
+
+  // 폰트 적용
+  var fontStack=appSettings.font==='sans-serif'
+    ? "'Malgun Gothic','Apple SD Gothic Neo',sans-serif"
+    : appSettings.font==='Georgia'
+      ? "Georgia,'Times New Roman',serif"
+      : "'Noto Serif KR',serif";
+  document.body.style.fontFamily=fontStack;
+  // 입력 요소들에도 폰트 적용
+  var style=document.getElementById('app-dynamic-style');
+  if(!style){style=document.createElement('style');style.id='app-dynamic-style';document.head.appendChild(style);}
+  style.textContent=
+    'body, input, textarea, select, button { font-size:'+sz+' !important; font-family:'+fontStack+' !important; }'+
+    '.field-input, .memo-card-text, .story-card-body, .story-text, .dream-card-text, .quote-text, .pair-field-input { font-size:'+sz+' !important; }'+
+    '.profile-name-input { font-size:'+Math.round(appSettings.fontSize*1.7)+'px !important; }'+
+    'body, .field-input, .memo-card-text, textarea, p, td, li { color:'+appSettings.textColor+' !important; }'+
+    '.char-name, .tl-title-input, .story-card-title, .pair-detail-name-input { color:'+appSettings.textColor+' !important; }';
+
+  // UI 업데이트
+  document.getElementById('sz-val').textContent=sz;
+  if(document.getElementById('font-select'))document.getElementById('font-select').value=appSettings.font;
   document.getElementById('accent-picks').querySelectorAll('.accent-pick').forEach(function(el){
-    el.classList.toggle('active',el.dataset.color===appSettings.accent);
+    el.classList.toggle('active',el.dataset.color===appSettings.textColor);
   });
   try{localStorage.setItem('ca_settings',JSON.stringify(appSettings));}catch(e){}
 }
@@ -1875,11 +1919,144 @@ document.getElementById('font-select').addEventListener('change',function(){
 var accentPicks=document.getElementById('accent-picks');
 ACCENT_COLORS.forEach(function(c){
   var d=document.createElement('div');d.className='accent-pick';d.style.background=c;d.dataset.color=c;
-  d.addEventListener('click',function(){appSettings.accent=c;applySettings();});
+  d.addEventListener('click',function(){appSettings.textColor=c;applySettings();});
   accentPicks.appendChild(d);
 });
 
 applySettings();
+
+
+// ── contenteditable 헬퍼 ──
+function ceGet(el){
+  if(!el)return '';
+  if(el.tagName==='TEXTAREA')return el.value;
+  return el.innerHTML;
+}
+function ceSet(el,val){
+  if(!el)return;
+  if(el.tagName==='TEXTAREA'){el.value=val||'';return;}
+  el.innerHTML=val||'';
+}
+function ceOnInput(el,cb){
+  if(!el)return;
+  if(el.tagName==='TEXTAREA'){el.addEventListener('input',function(){cb(this.value);});return;}
+  el.addEventListener('input',function(){cb(this.innerHTML);});
+}
+function makeCE(tag,cls,placeholder,rows){
+  // textarea 대신 contenteditable div 생성
+  var d=document.createElement('div');
+  d.className=cls+' ce-field';
+  d.contentEditable='true';
+  d.dataset.placeholder=placeholder||'';
+  d.style.minHeight=(rows||3)*1.8+'em';
+  return d;
+}
+
+// ── 볼드 툴바 ──
+var boldToolbar=document.getElementById('bold-toolbar');
+var savedRange=null;
+function showBoldToolbar(x,y){boldToolbar.style.left=x+'px';boldToolbar.style.top=(y-40)+'px';boldToolbar.classList.add('show');}
+function hideBoldToolbar(){boldToolbar.classList.remove('show');}
+
+document.addEventListener('mouseup',function(e){
+  if(boldToolbar.contains(e.target))return;
+  var sel=window.getSelection();
+  if(!sel||sel.isCollapsed||!sel.toString().trim()){hideBoldToolbar();return;}
+  // contenteditable 안에서만 툴바 표시
+  var anchor=sel.anchorNode;
+  var inCE=false;
+  var node=anchor;
+  while(node){if(node.contentEditable==='true'){inCE=true;break;}node=node.parentNode;}
+  if(!inCE){hideBoldToolbar();return;}
+  savedRange=sel.getRangeAt(0).cloneRange();
+  var rect=sel.getRangeAt(0).getBoundingClientRect();
+  showBoldToolbar(rect.left+rect.width/2-40,rect.top+window.scrollY);
+});
+document.addEventListener('mousedown',function(e){
+  if(!boldToolbar.contains(e.target))hideBoldToolbar();
+});
+
+function wrapSelection(tagName){
+  var range=savedRange;
+  if(!range)return;
+  // 이미 같은 태그로 감싸져 있으면 해제
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  var selectedText=range.toString();
+  if(!selectedText)return;
+  // 부모가 같은 태그면 unwrap
+  var parent=range.commonAncestorContainer;
+  if(parent.nodeType===3)parent=parent.parentNode;
+  if(parent.tagName&&parent.tagName.toLowerCase()===tagName.toLowerCase()){
+    var frag=document.createDocumentFragment();
+    while(parent.firstChild)frag.appendChild(parent.firstChild);
+    parent.parentNode.replaceChild(frag,parent);
+  } else {
+    // wrap
+    var el=document.createElement(tagName);
+    try{range.surroundContents(el);}
+    catch(e){
+      el.appendChild(range.extractContents());
+      range.insertNode(el);
+    }
+  }
+  // 변경 이벤트
+  var node=range.commonAncestorContainer;
+  while(node&&node.contentEditable!=='true')node=node.parentNode;
+  if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
+  hideBoldToolbar();
+}
+document.getElementById('bt-bold').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('b');});
+document.getElementById('bt-italic').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('i');});
+document.getElementById('bt-underline').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('u');});
+
+
+// 폰트 파일 업로드
+document.getElementById('font-upload-btn').addEventListener('click',function(){document.getElementById('font-file-input').click();});
+document.getElementById('font-file-input').addEventListener('change',function(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var fontName='CustomFont'+Date.now();
+    var style=document.createElement('style');
+    style.textContent='@font-face{font-family:"'+fontName+'";src:url("'+ev.target.result+'")}';
+    document.head.appendChild(style);
+    var opt=document.getElementById('custom-font-opt');
+    opt.style.display='';opt.value=fontName;opt.textContent='업로드: '+file.name.replace(/\.[^.]+$/,'');
+    document.getElementById('font-select').value=fontName;
+    appSettings.font=fontName;applySettings();
+  };
+  reader.readAsDataURL(file);e.target.value='';
+});
+
+
+// ── 사이드바 리사이즈 ──
+(function(){
+  var handle=document.getElementById('sidebar-resize-handle');
+  if(!handle)return;
+  var sidebar=document.getElementById('sidebar');
+  var app=document.getElementById('app');
+  var dragging=false,startX=0,startW=0;
+  handle.addEventListener('mousedown',function(e){
+    dragging=true;startX=e.clientX;startW=sidebar.offsetWidth;
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!dragging)return;
+    var newW=Math.max(160,Math.min(400,startW+(e.clientX-startX)));
+    sidebar.style.width=newW+'px';
+    app.style.gridTemplateColumns=newW+'px 1fr';
+  });
+  document.addEventListener('mouseup',function(){
+    if(!dragging)return;
+    dragging=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+  });
+})();
 
 document.getElementById('search').addEventListener('input',renderList);
 renderList();
