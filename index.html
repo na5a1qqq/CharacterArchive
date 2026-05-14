@@ -1999,18 +1999,19 @@ function makeCE(tag,cls,placeholder,rows){
 // ── 볼드 툴바 ──
 
 // ── 서식 (설정 패널 버튼) ──
-// 마지막으로 선택된 CE 범위 저장
 var _savedFmtRange=null;
 
-// CE 영역에서 포커스 잃기 전 selection 저장
-document.addEventListener('mousedown',function(e){
-  // 설정 패널 클릭 시 현재 selection 저장
-  if(document.getElementById('settings-panel').contains(e.target)){
-    var sel=window.getSelection();
-    if(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode)){
-      _savedFmtRange=sel.getRangeAt(0).cloneRange();
-    }
+// CE 영역에서 selection이 바뀔 때마다 저장
+document.addEventListener('selectionchange',function(){
+  var sel=window.getSelection();
+  if(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode)){
+    _savedFmtRange=sel.getRangeAt(0).cloneRange();
   }
+});
+
+// 설정 패널 버튼 클릭 시 선택 해제 방지
+document.getElementById('settings-panel').addEventListener('mousedown',function(e){
+  if(e.target.classList.contains('bt-btn'))e.preventDefault();
 });
 
 // 선택 범위의 공통 조상 기준으로 태그 이미 적용됐는지 확인
