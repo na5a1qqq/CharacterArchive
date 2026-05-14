@@ -1999,34 +1999,22 @@ function makeCE(tag,cls,placeholder,rows){
 // ── 볼드 툴바 ──
 
 // ── 서식 (설정 패널 버튼) ──
+// 마지막으로 선택된 CE 범위 저장
 var _savedFmtRange=null;
 
-// CE 영역에서 selection이 바뀔 때마다 저장
-document.addEventListener('selectionchange',function(){
-  var sel=window.getSelection();
-  if(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode)){
-    _savedFmtRange=sel.getRangeAt(0).cloneRange();
+// CE 영역에서 포커스 잃기 전 selection 저장
+document.addEventListener('mousedown',function(e){
+  // 설정 패널 클릭 시 현재 selection 저장
+  if(document.getElementById('settings-panel').contains(e.target)){
+    var sel=window.getSelection();
+    if(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode)){
+      _savedFmtRange=sel.getRangeAt(0).cloneRange();
+    }
   }
 });
-
-// 설정 패널 버튼 클릭 시 선택 해제 방지
-document.getElementById('settings-panel').addEventListener('mousedown',function(e){
-  if(e.target.classList.contains('bt-btn'))e.preventDefault();
-});
-
-// 선택 범위의 공통 조상 기준으로 태그 이미 적용됐는지 확인
-function _isAlreadyWrapped(range, tagName){
-  // 방법1: startContainer 부모 체인 확인
-  var node=range.startContainer;
-  if(node.nodeType===3)node=node.parentNode;
-  while(node&&node.getAttribute&&node.getAttribute('contenteditable')!=='true'){
-    if(node.tagName&&node.tagName.toLowerCase()===tagName)return node;
-    node=node.parentNode;
-  }
-  return null;
-}
 
 function applyFmt(tagName){
+  // 저장된 범위 또는 현재 선택
   var sel=window.getSelection();
   var range=null;
   if(_savedFmtRange){
@@ -2038,27 +2026,31 @@ function applyFmt(tagName){
   }
   if(!range||!range.toString().trim())return;
 
-  // CE 루트 찾기
-  var ceRoot=range.startContainer;
-  if(ceRoot.nodeType===3)ceRoot=ceRoot.parentNode;
-  while(ceRoot&&ceRoot.getAttribute&&ceRoot.getAttribute('contenteditable')!=='true')ceRoot=ceRoot.parentNode;
-
-  // 이미 적용된 태그 찾기 → unwrap
-  var existing=_isAlreadyWrapped(range,tagName);
-  if(existing){
-    var frag=document.createDocumentFragment();
-    while(existing.firstChild)frag.appendChild(existing.firstChild);
-    existing.parentNode.replaceChild(frag,existing);
-    if(ceRoot)ceRoot.dispatchEvent(new Event('input',{bubbles:true}));
-    _savedFmtRange=null;
-    return;
+  // 이미 같은 태그로 감싸진 경우 해제
+  var ancestor=range.commonAncestorContainer;
+  if(ancestor.nodeType===3)ancestor=ancestor.parentNode;
+  var wrap=ancestor;
+  while(wrap&&wrap.getAttribute&&wrap.getAttribute('contenteditable')!=='true'){
+    if(wrap.tagName&&wrap.tagName.toLowerCase()===tagName){
+      var frag=document.createDocumentFragment();
+      while(wrap.firstChild)frag.appendChild(wrap.firstChild);
+      wrap.parentNode.replaceChild(frag,wrap);
+      // 저장 트리거
+      var p=frag.parentNode;
+      while(p&&p.getAttribute&&p.getAttribute('contenteditable')!=='true')p=p.parentNode;
+      if(p)p.dispatchEvent(new Event('input',{bubbles:true}));
+      _savedFmtRange=null;
+      return;
+    }
+    wrap=wrap.parentNode;
   }
-
   // 감싸기
   var el=document.createElement(tagName);
   try{range.surroundContents(el);}
   catch(ex){el.appendChild(range.extractContents());range.insertNode(el);}
-  if(ceRoot)ceRoot.dispatchEvent(new Event('input',{bubbles:true}));
+  var node=el.parentNode;
+  while(node&&node.getAttribute&&node.getAttribute('contenteditable')!=='true')node=node.parentNode;
+  if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
   _savedFmtRange=null;
 }
 
