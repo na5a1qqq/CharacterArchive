@@ -1948,9 +1948,14 @@ document.getElementById('font-select').addEventListener('change',function(){
   appSettings.font=this.value;applySettings();
 });
 
-// isInCE: contenteditable 영역인지 확인 (글자색과 툴바 공통 사용)
+// isInCE: contenteditable 영역인지 확인
 function isInCE(node){
-  while(node){if(node.nodeType===1&&node.contentEditable==='true')return true;node=node.parentNode;}
+  // 텍스트 노드면 부모부터 시작
+  if(node&&node.nodeType===3)node=node.parentNode;
+  while(node&&node.nodeType===1){
+    if(node.getAttribute&&node.getAttribute('contenteditable')==='true')return true;
+    node=node.parentNode;
+  }
   return false;
 }
 
@@ -2004,12 +2009,62 @@ function makeCE(tag,cls,placeholder,rows){
 var boldToolbar=document.getElementById('bold-toolbar');
 var savedRange=null;
 
+// 태그 감싸기/해제 (execCommand 미사용 - file:// 호환)
+function _wrapTag(tagName){
+  if(!savedRange)return;
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+  if(!sel.toString().trim())return;
+
+  var range=sel.getRangeAt(0);
+  // 이미 해당 태그로 감싸진 경우 → 해제
+  var ancestor=range.commonAncestorContainer;
+  if(ancestor.nodeType===3)ancestor=ancestor.parentNode;
+  // 선택 전체가 같은 태그 안에 있는지 확인
+  var wrap=ancestor;
+  while(wrap&&wrap.contentEditable!=='true'){
+    if(wrap.tagName&&wrap.tagName.toLowerCase()===tagName){
+      // unwrap
+      var frag=document.createDocumentFragment();
+      while(wrap.firstChild)frag.appendChild(wrap.firstChild);
+      wrap.parentNode.replaceChild(frag,wrap);
+      _saveAndFire(sel);return;
+    }
+    wrap=wrap.parentNode;
+  }
+  // 감싸기
+  var el=document.createElement(tagName);
+  try{range.surroundContents(el);}
+  catch(ex){el.appendChild(range.extractContents());range.insertNode(el);}
+  _saveAndFire(sel);
+}
+
+function _saveAndFire(sel){
+  var node=sel.anchorNode;
+  while(node&&node.contentEditable!=='true')node=node.parentNode;
+  if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
+  if(sel.rangeCount>0)savedRange=sel.getRangeAt(0).cloneRange();
+  _updateBtnState();
+}
+
+// 현재 선택이 해당 태그 안에 있는지 확인
+function _isWrapped(tagName){
+  var sel=window.getSelection();
+  if(!sel||sel.isCollapsed)return false;
+  var node=sel.anchorNode;
+  if(node.nodeType===3)node=node.parentNode;
+  while(node&&node.contentEditable!=='true'){
+    if(node.tagName&&node.tagName.toLowerCase()===tagName)return true;
+    node=node.parentNode;
+  }
+  return false;
+}
+
 function _updateBtnState(){
-  try{
-    document.getElementById('bt-bold').classList.toggle('active',document.queryCommandState('bold'));
-    document.getElementById('bt-italic').classList.toggle('active',document.queryCommandState('italic'));
-    document.getElementById('bt-underline').classList.toggle('active',document.queryCommandState('underline'));
-  }catch(ex){}
+  document.getElementById('bt-bold').classList.toggle('active',_isWrapped('b')||_isWrapped('strong'));
+  document.getElementById('bt-italic').classList.toggle('active',_isWrapped('i')||_isWrapped('em'));
+  document.getElementById('bt-underline').classList.toggle('active',_isWrapped('u'));
 }
 
 function showBoldToolbar(rect){
@@ -2024,43 +2079,47 @@ function showBoldToolbar(rect){
 }
 function hideBoldToolbar(){boldToolbar.classList.remove('show');}
 
-// 툴바 자체 mousedown: 선택 해제 방지만
+// 툴바 mousedown: 선택 유지
 boldToolbar.addEventListener('mousedown',function(e){e.preventDefault();});
 
-// mousedown: 툴바 외부이면 드래그 후 판단하기 위해 플래그만
-var _hideToolbarPending=false;
-document.addEventListener('mousedown',function(e){
-  _hideToolbarPending=!boldToolbar.contains(e.target);
-});
-
-// mouseup: 선택 결과로 show/hide 결정
+// mouseup: 선택 있으면 표시, 없으면 숨김
 document.addEventListener('mouseup',function(e){
+  // 툴바 버튼 클릭이면 무시
   if(boldToolbar.contains(e.target))return;
   setTimeout(function(){
     var sel=window.getSelection();
     if(!sel||sel.isCollapsed||!sel.toString().trim()){
-      if(_hideToolbarPending){hideBoldToolbar();savedRange=null;}
+      hideBoldToolbar();
+      savedRange=null;
       return;
     }
-    if(!isInCE(sel.anchorNode)){hideBoldToolbar();savedRange=null;return;}
+    if(!isInCE(sel.anchorNode)){
+      hideBoldToolbar();
+      savedRange=null;
+      return;
+    }
     savedRange=sel.getRangeAt(0).cloneRange();
     showBoldToolbar(sel.getRangeAt(0).getBoundingClientRect());
   },0);
 });
 
+// 툴바 외부 다른 곳 클릭하면 숨김 (mousedown 기준 - 단 드래그 시작은 아님)
+document.addEventListener('click',function(e){
+  if(!boldToolbar.contains(e.target)){
+    var sel=window.getSelection();
+    if(!sel||sel.isCollapsed){
+      hideBoldToolbar();
+      savedRange=null;
+    }
+  }
+});
+
 function applyFormat(cmd){
-  if(!savedRange)return;
+  var tag=cmd==='bold'?'b':cmd==='italic'?'i':'u';
+  _wrapTag(tag);
+  // 툴바 위지 갱신
   var sel=window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(savedRange);
-  document.execCommand(cmd);
-  var node=sel.anchorNode;
-  while(node&&!(node.nodeType===1&&node.contentEditable==='true'))node=node.parentNode;
-  if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
-  if(sel.rangeCount>0)savedRange=sel.getRangeAt(0).cloneRange();
-  _updateBtnState();
-  // 툴바 위치 갱신
-  if(sel.rangeCount>0){
+  if(sel&&sel.rangeCount>0){
     var r=sel.getRangeAt(0).getBoundingClientRect();
     if(r.width>0)showBoldToolbar(r);
   }
@@ -2180,3 +2239,6 @@ if(chars.length>0)selectChar(chars[0].id);
 })();
 
 })();
+</script>
+</body>
+</html>
