@@ -465,12 +465,8 @@ textarea.field-input{min-height:52px;line-height:1.7}
 .ce-field:empty::before{content:attr(data-placeholder);color:var(--text-dim);pointer-events:none}
 .ce-field:focus{outline:none}
 
-/* 볼드 플로팅 툴바 */
-#bold-toolbar{position:fixed;display:none;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);padding:3px 5px;gap:3px;z-index:9990;align-items:center}
-#bold-toolbar.show{display:flex}
-.bt-btn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:transparent;cursor:pointer;font-size:11px;color:var(--text-muted);font-family:inherit;transition:all .15s}
+.bt-btn{padding:4px 10px;border:1px solid var(--border);border-radius:3px;background:#fff;cursor:pointer;font-size:12px;color:var(--text-muted);font-family:inherit;transition:all .15s}
 .bt-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
-/* ★ 수정 2: 활성화 표시 스타일 */
 .bt-btn.active{background:var(--gold);color:#fff;border-color:var(--gold)}
 
 
@@ -510,11 +506,7 @@ textarea.field-input{min-height:52px;line-height:1.7}
 </style>
 </head>
 <body>
-<div id="bold-toolbar">
-  <button class="bt-btn" id="bt-bold" title="굵게"><b>B</b></button>
-  <button class="bt-btn" id="bt-italic" title="기울임"><i>I</i></button>
-  <button class="bt-btn" id="bt-underline" title="밑줄"><u>U</u></button>
-</div>
+
 <input id="font-file-input" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none;position:absolute">
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none;position:absolute;visibility:hidden">
 <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;position:absolute;visibility:hidden">
@@ -565,6 +557,7 @@ textarea.field-input{min-height:52px;line-height:1.7}
       <div class="settings-row"><span class="settings-label">글자 크기</span><div class="settings-control"><button class="sz-btn" id="sz-down">−</button><span class="sz-val" id="sz-val">14px</span><button class="sz-btn" id="sz-up">+</button></div></div>
       <div class="settings-row"><span class="settings-label">폰트</span><div class="settings-control"><select class="font-select" id="font-select"><option value="Noto Serif KR">명조 (기본)</option><option value="sans-serif">고딕</option><option value="Georgia">Georgia</option><option value="custom" id="custom-font-opt" style="display:none">업로드한 폰트</option></select><button class="sz-btn" id="font-upload-btn" style="width:auto;padding:0 8px;margin-left:4px" title="폰트 파일 업로드">📁</button></div></div>
       <div class="settings-row"><span class="settings-label">글자 색</span><div class="settings-control"><div class="accent-picks" id="accent-picks"></div></div></div>
+      <div class="settings-row"><span class="settings-label">서식</span><div class="settings-control" style="gap:4px"><button class="bt-btn" id="bt-bold"><b>B</b></button><button class="bt-btn" id="bt-italic"><i>I</i></button><button class="bt-btn" id="bt-underline"><u>U</u></button></div></div>
     </div>
     <div id="sidebar-resize-handle"></div>
   </div>
@@ -2004,30 +1997,50 @@ function makeCE(tag,cls,placeholder,rows){
 }
 
 // ── 볼드 툴바 ──
-var boldToolbar=document.getElementById('bold-toolbar');
-var savedRange=null;
 
-// 태그 감싸기/해제 (execCommand 미사용 - file:// 호환)
-function _wrapTag(tagName){
-  if(!savedRange)return;
+// ── 서식 (설정 패널 버튼) ──
+// 마지막으로 선택된 CE 범위 저장
+var _savedFmtRange=null;
+
+// CE 영역에서 포커스 잃기 전 selection 저장
+document.addEventListener('mousedown',function(e){
+  // 설정 패널 클릭 시 현재 selection 저장
+  if(document.getElementById('settings-panel').contains(e.target)){
+    var sel=window.getSelection();
+    if(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode)){
+      _savedFmtRange=sel.getRangeAt(0).cloneRange();
+    }
+  }
+});
+
+function applyFmt(tagName){
+  // 저장된 범위 또는 현재 선택
   var sel=window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(savedRange);
-  if(!sel.toString().trim())return;
+  var range=null;
+  if(_savedFmtRange){
+    sel.removeAllRanges();
+    sel.addRange(_savedFmtRange);
+    range=sel.getRangeAt(0);
+  } else if(sel&&!sel.isCollapsed&&isInCE(sel.anchorNode)){
+    range=sel.getRangeAt(0);
+  }
+  if(!range||!range.toString().trim())return;
 
-  var range=sel.getRangeAt(0);
-  // 이미 해당 태그로 감싸진 경우 → 해제
+  // 이미 같은 태그로 감싸진 경우 해제
   var ancestor=range.commonAncestorContainer;
   if(ancestor.nodeType===3)ancestor=ancestor.parentNode;
-  // 선택 전체가 같은 태그 안에 있는지 확인
   var wrap=ancestor;
-  while(wrap&&wrap.contentEditable!=='true'){
+  while(wrap&&wrap.getAttribute&&wrap.getAttribute('contenteditable')!=='true'){
     if(wrap.tagName&&wrap.tagName.toLowerCase()===tagName){
-      // unwrap
       var frag=document.createDocumentFragment();
       while(wrap.firstChild)frag.appendChild(wrap.firstChild);
       wrap.parentNode.replaceChild(frag,wrap);
-      _saveAndFire(sel);return;
+      // 저장 트리거
+      var p=frag.parentNode;
+      while(p&&p.getAttribute&&p.getAttribute('contenteditable')!=='true')p=p.parentNode;
+      if(p)p.dispatchEvent(new Event('input',{bubbles:true}));
+      _savedFmtRange=null;
+      return;
     }
     wrap=wrap.parentNode;
   }
@@ -2035,98 +2048,15 @@ function _wrapTag(tagName){
   var el=document.createElement(tagName);
   try{range.surroundContents(el);}
   catch(ex){el.appendChild(range.extractContents());range.insertNode(el);}
-  _saveAndFire(sel);
-}
-
-function _saveAndFire(sel){
-  var node=sel.anchorNode;
-  while(node&&node.contentEditable!=='true')node=node.parentNode;
+  var node=el.parentNode;
+  while(node&&node.getAttribute&&node.getAttribute('contenteditable')!=='true')node=node.parentNode;
   if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
-  if(sel.rangeCount>0)savedRange=sel.getRangeAt(0).cloneRange();
-  _updateBtnState();
+  _savedFmtRange=null;
 }
 
-// 현재 선택이 해당 태그 안에 있는지 확인
-function _isWrapped(tagName){
-  var sel=window.getSelection();
-  if(!sel||sel.isCollapsed)return false;
-  var node=sel.anchorNode;
-  if(node.nodeType===3)node=node.parentNode;
-  while(node&&node.contentEditable!=='true'){
-    if(node.tagName&&node.tagName.toLowerCase()===tagName)return true;
-    node=node.parentNode;
-  }
-  return false;
-}
-
-function _updateBtnState(){
-  document.getElementById('bt-bold').classList.toggle('active',_isWrapped('b')||_isWrapped('strong'));
-  document.getElementById('bt-italic').classList.toggle('active',_isWrapped('i')||_isWrapped('em'));
-  document.getElementById('bt-underline').classList.toggle('active',_isWrapped('u'));
-}
-
-function showBoldToolbar(rect){
-  var x=rect.left+rect.width/2-50;
-  var y=rect.top-44;
-  if(y<8)y=rect.bottom+6;
-  x=Math.max(4,Math.min(x,window.innerWidth-110));
-  boldToolbar.style.left=x+'px';
-  boldToolbar.style.top=y+'px';
-  boldToolbar.classList.add('show');
-  _updateBtnState();
-}
-function hideBoldToolbar(){boldToolbar.classList.remove('show');}
-
-// 툴바 mousedown: 선택 유지
-boldToolbar.addEventListener('mousedown',function(e){e.preventDefault();});
-
-// mouseup: 선택 있으면 표시, 없으면 숨김
-document.addEventListener('mouseup',function(e){
-  // 툴바 버튼 클릭이면 무시
-  if(boldToolbar.contains(e.target))return;
-  setTimeout(function(){
-    var sel=window.getSelection();
-    if(!sel||sel.isCollapsed||!sel.toString().trim()){
-      hideBoldToolbar();
-      savedRange=null;
-      return;
-    }
-    if(!isInCE(sel.anchorNode)){
-      hideBoldToolbar();
-      savedRange=null;
-      return;
-    }
-    savedRange=sel.getRangeAt(0).cloneRange();
-    showBoldToolbar(sel.getRangeAt(0).getBoundingClientRect());
-  },0);
-});
-
-// 툴바 외부 다른 곳 클릭하면 숨김 (mousedown 기준 - 단 드래그 시작은 아님)
-document.addEventListener('click',function(e){
-  if(!boldToolbar.contains(e.target)){
-    var sel=window.getSelection();
-    if(!sel||sel.isCollapsed){
-      hideBoldToolbar();
-      savedRange=null;
-    }
-  }
-});
-
-function applyFormat(cmd){
-  var tag=cmd==='bold'?'b':cmd==='italic'?'i':'u';
-  _wrapTag(tag);
-  // 툴바 위지 갱신
-  var sel=window.getSelection();
-  if(sel&&sel.rangeCount>0){
-    var r=sel.getRangeAt(0).getBoundingClientRect();
-    if(r.width>0)showBoldToolbar(r);
-  }
-}
-
-document.getElementById('bt-bold').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('bold');});
-document.getElementById('bt-italic').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('italic');});
-document.getElementById('bt-underline').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('underline');});
-
+document.getElementById('bt-bold').addEventListener('click',function(){applyFmt('b');});
+document.getElementById('bt-italic').addEventListener('click',function(){applyFmt('i');});
+document.getElementById('bt-underline').addEventListener('click',function(){applyFmt('u');});
 
 // 폰트 파일 업로드
 document.getElementById('font-upload-btn').addEventListener('click',function(){document.getElementById('font-file-input').click();});
@@ -2193,28 +2123,6 @@ if(chars.length>0)selectChar(chars[0].id);
     btn.addEventListener('click',function(){document.getElementById('add-btn').click();});
     bar.insertBefore(btn,bar.firstChild);
   }
-
-  document.addEventListener('selectionchange',function(){
-    if(!isMobile())return;
-    setTimeout(function(){
-      var sel=window.getSelection();
-      if(!sel||sel.isCollapsed||!sel.toString().trim())return;
-      if(!isInCE(sel.anchorNode))return;
-      savedRange=sel.getRangeAt(0).cloneRange();
-      var rect=sel.getRangeAt(0).getBoundingClientRect();
-      if(!rect||rect.width===0)return;
-      showBoldToolbar(rect);
-    },120);
-  });
-
-  ['bt-bold','bt-italic','bt-underline'].forEach(function(id){
-    var el=document.getElementById(id);if(!el)return;
-    el.addEventListener('touchstart',function(e){
-      e.preventDefault();
-      var cmd=id==='bt-bold'?'bold':id==='bt-italic'?'italic':'underline';
-      applyFormat(cmd);
-    },{passive:false});
-  });
 
   var mc=document.getElementById('main-content');
   var tx=0,ty=0;
