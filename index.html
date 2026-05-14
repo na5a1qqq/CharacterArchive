@@ -393,26 +393,70 @@ textarea.field-input{min-height:52px;line-height:1.7}
 .accent-picks{display:flex;gap:4px;flex-wrap:wrap}
 .accent-pick{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
 .accent-pick:hover,.accent-pick.active{border-color:var(--text)}
-/* 모바일 */
-@media(max-width:640px){
-  #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  #sidebar{border-right:none;border-bottom:1px solid var(--border);max-height:200px}
-  #char-list{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:4px;gap:4px}
-  .char-item{flex-direction:column;min-width:60px;padding:6px 4px;text-align:center;gap:3px}
+/* ── 모바일 최적화 ── */
+@media(max-width:768px){
+  #app{display:flex;flex-direction:column;height:100vh;height:100dvh;grid-template-columns:unset}
+  #main{order:1;flex:1;overflow:hidden;min-height:0}
+  #sidebar{order:2;flex-direction:column;flex-shrink:0;border-right:none;border-top:1px solid var(--border);height:auto;overflow:visible}
+  #sidebar-top{display:none}
+  #char-list{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:6px 8px;gap:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;min-height:60px;max-height:72px;border-bottom:none}
+  #char-list::-webkit-scrollbar{display:none}
+  .char-item{flex-direction:column;align-items:center;min-width:44px;max-width:56px;flex-shrink:0;padding:4px;gap:2px;border-radius:8px}
   .char-info{display:none}
   .char-del{display:none}
-  #io-bar{flex-wrap:wrap}
-  .io-btn{flex:1;text-align:center}
-  #main-tabs{font-size:9px}
-  .mtab{padding:8px 10px;font-size:9px;letter-spacing:1px}
+  #io-bar{display:flex;flex-direction:row;align-items:center;justify-content:center;padding:4px 8px;gap:6px;border-top:1px solid var(--border);background:var(--panel);flex-shrink:0;width:auto}
+  .io-btn{font-size:10px;padding:5px 10px;flex:1;text-align:center;width:auto;max-width:none;writing-mode:unset}
+  #settings-btn{margin:4px 8px;width:auto}
+  #settings-panel.open{display:block}
   #settings-panel .settings-row{flex-wrap:wrap}
-  #tab-profile{padding:12px}
-  .fields-grid,.fields-grid-3{grid-template-columns:1fr}
+  #sidebar-resize-handle{display:none}
+  #main-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #main-tabs::-webkit-scrollbar{display:none}
+  .mtab{padding:9px 11px;font-size:9px;letter-spacing:0.8px}
+  #tab-profile{padding:12px 10px}
+  .profile-header{flex-direction:column;gap:12px}
+  .avatar-wrap{display:flex;align-items:center;gap:10px}
+  .profile-avatar-big{width:60px;height:60px;font-size:20px}
+  .avatar-btns{margin-top:0}
+  .profile-name-input{font-size:20px !important}
+  .fields-grid{grid-template-columns:1fr}
+  .fields-grid-3{grid-template-columns:1fr 1fr}
   .field-box.wide{grid-column:1}
-  .psy-grid{grid-template-columns:1fr}
-  #pairs-left{width:140px}
-  #story-sidebar{width:140px}
-  #rel-canvas-wrap{min-height:250px}
+  .psych-grid{grid-template-columns:1fr}
+  #story-wrap{flex-direction:column}
+  #story-sidebar{width:100%!important;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;height:auto;flex-shrink:0;position:relative}
+  #story-folder-list{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;flex:1;padding:4px 6px;gap:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #story-folder-list::-webkit-scrollbar{display:none}
+  .story-folder-item{flex-shrink:0;white-space:nowrap;padding:6px 10px;font-size:11px}
+  .story-folder-item-del{display:none}
+  #story-folder-add-wrap{border-top:none;border-left:1px solid var(--border);padding:5px;flex-shrink:0}
+  #story-folder-name-input{width:70px;font-size:11px}
+  #story-resize-handle{display:none}
+  .story-card-row{flex-direction:column}
+  #pairs-wrap{flex-direction:column}
+  #pairs-left{width:100%!important;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;height:auto;flex-shrink:0}
+  #pairs-list-nav{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;flex:1;padding:4px 6px;gap:4px;scrollbar-width:none}
+  #pairs-list-nav::-webkit-scrollbar{display:none}
+  .pair-nav-item{flex-shrink:0;white-space:nowrap;padding:6px 10px}
+  .pair-nav-del{display:none}
+  #pairs-left-bottom{border-top:none;border-left:1px solid var(--border);padding:5px;flex-shrink:0}
+  #pairs-content{padding:12px 10px}
+  .rel-toolbar{flex-wrap:wrap;gap:5px;padding:8px 10px}
+  #rel-canvas-wrap{min-height:260px}
+  #gallery-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));padding:10px;gap:8px}
+  .bt-btn{padding:7px 13px;font-size:13px;min-height:36px}
+  #modal{min-width:unset;width:96%;padding:16px}
+  .modal-row{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+  .mtab{padding:8px 8px;font-size:8px}
+  .fields-grid-3{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+  .mtab{padding:8px 9px;font-size:8px;letter-spacing:0.5px}
+  .fields-grid-3{grid-template-columns:1fr}
+  #io-bar{width:44px}
+  .io-btn{font-size:8px;max-width:38px}
 }
 
 
@@ -420,11 +464,13 @@ textarea.field-input{min-height:52px;line-height:1.7}
 .ce-field{width:100%;background:transparent;border:none;font-size:inherit;color:var(--text);font-family:inherit;resize:none;min-height:52px;line-height:1.8;outline:none;word-break:break-all;white-space:pre-wrap}
 .ce-field:empty::before{content:attr(data-placeholder);color:var(--text-dim);pointer-events:none}
 .ce-field:focus{outline:none}
+
 /* 볼드 플로팅 툴바 */
 #bold-toolbar{position:fixed;display:none;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.1);padding:3px 5px;gap:3px;z-index:9990;align-items:center}
 #bold-toolbar.show{display:flex}
 .bt-btn{padding:3px 8px;border:1px solid var(--border);border-radius:3px;background:transparent;cursor:pointer;font-size:11px;color:var(--text-muted);font-family:inherit;transition:all .15s}
 .bt-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold)}
+/* ★ 수정 2: 활성화 표시 스타일 */
 .bt-btn.active{background:var(--gold);color:#fff;border-color:var(--gold)}
 
 
@@ -464,7 +510,11 @@ textarea.field-input{min-height:52px;line-height:1.7}
 </style>
 </head>
 <body>
-<div id="bold-toolbar"><button class="bt-btn" id="bt-bold" title="굵게"><b>B</b></button><button class="bt-btn" id="bt-italic" title="기울임"><i>I</i></button><button class="bt-btn" id="bt-underline" title="밑줄"><u>U</u></button></div>
+<div id="bold-toolbar">
+  <button class="bt-btn" id="bt-bold" title="굵게"><b>B</b></button>
+  <button class="bt-btn" id="bt-italic" title="기울임"><i>I</i></button>
+  <button class="bt-btn" id="bt-underline" title="밑줄"><u>U</u></button>
+</div>
 <input id="font-file-input" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none;position:absolute">
 <input type="file" id="avatar-file-input" accept="image/*" style="display:none;position:absolute;visibility:hidden">
 <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none;position:absolute;visibility:hidden">
@@ -914,14 +964,31 @@ function loadProfile(){
   document.getElementById('prof-name').value=ch.name||'';
   document.getElementById('prof-type').value=ch.type||'드림주';
   document.getElementById('prof-genre').value=ch.genre||'';
-  PF_FIELDS.forEach(function(f){var el=document.getElementById('pf-'+f);if(el)el.value=ch[f]||'';});
+  PF_FIELDS.forEach(function(f){
+    var el=document.getElementById('pf-'+f);
+    if(!el)return;
+    // ★ 수정 1: input 요소와 contenteditable 구분
+    if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+      el.value=ch[f]||'';
+    } else {
+      el.innerHTML=ch[f]||'';
+    }
+  });
   renderPalette();renderThemeSongs();updateAvatar();
 }
 (function bindProfile(){
   document.getElementById('prof-name').addEventListener('input',function(){var ch=getChar(curId);if(ch){ch.name=this.value;save();renderList();updateAvatar();}});
   document.getElementById('prof-type').addEventListener('change',function(){var ch=getChar(curId);if(ch){ch.type=this.value;save();renderList();}});
   document.getElementById('prof-genre').addEventListener('input',function(){var ch=getChar(curId);if(ch){ch.genre=this.value;save();renderList();}});
-  PF_FIELDS.forEach(function(f){var el=document.getElementById('pf-'+f);if(el)el.addEventListener('input',function(){var ch=getChar(curId);if(ch){ch[f]=this.value;save();}});});
+  PF_FIELDS.forEach(function(f){
+    var el=document.getElementById('pf-'+f);
+    if(!el)return;
+    if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){
+      el.addEventListener('input',function(){var ch=getChar(curId);if(ch){ch[f]=this.value;save();}});
+    } else {
+      el.addEventListener('input',function(){var ch=getChar(curId);if(ch){ch[f]=this.innerHTML;save();}});
+    }
+  });
 })();
 
 // 내면·심리
@@ -1048,7 +1115,6 @@ function renderTimeline(){
   if(!events.length){var e=document.createElement('div');e.className='tl-empty';e.textContent='사건을 추가해보세요';list.appendChild(e);return;}
   events.forEach(function(ev){
     var item=document.createElement('div');item.className='tl-item draggable-card';item.dataset.id=ev.id;item.style.position='relative';
-    // 드래그 핸들
     var handle=document.createElement('div');handle.className='drag-handle';handle.textContent='⠿';handle.title='드래그해서 순서 변경';
     var left=document.createElement('div');left.className='tl-left';
     var dot=document.createElement('div');dot.className='tl-dot';dot.style.background=TL_DOT_COLORS[ev.dotColor||'기본']||'#A86848';dot.title='클릭해서 색 변경';
@@ -1095,7 +1161,6 @@ function renderQuotes(){
   quotes.forEach(function(q){
     var card=document.createElement('div');card.className='quote-card draggable-card';card.dataset.id=q.id;
     card.style.position='relative';card.style.paddingLeft='22px';
-    // 드래그 핸들
     var qHandle=document.createElement('div');qHandle.className='drag-handle';qHandle.textContent='⠿';
     qHandle.style.cssText='position:absolute;top:50%;left:5px;transform:translateY(-50%);z-index:1';
     card.appendChild(qHandle);
@@ -1112,33 +1177,6 @@ document.getElementById('quotes-add-btn').addEventListener('click',function(){
   ch.quotes.push({id:uid(),text:'',context:''});save();renderQuotes();
   var items=document.getElementById('quotes-list').querySelectorAll('.quote-text');if(items.length)items[items.length-1].focus();
 });
-
-// 드관
-function renderPairs(){renderPairsNav();return;/*old*/
-  var ch=getChar(curId);if(!ch)return;
-  var list=document.getElementById('pairs-list');list.innerHTML='';
-  var pairs=(ch.pairs||[]).filter(function(p){return p.ptype==='dg';});
-  if(!pairs.length){var e=document.createElement('div');e.className='empty-msg';e.textContent='드관을 추가해보세요';list.appendChild(e);return;}
-  pairs.forEach(function(p){
-    var card=document.createElement('div');card.className='pair-card';
-    var hdr=document.createElement('div');hdr.className='pair-card-header';
-    var badge=document.createElement('span');badge.className='pair-type-badge dg';badge.textContent='드관';
-    var titleInp=document.createElement('input');titleInp.className='pair-title-input';
-    titleInp.placeholder='이름';
-    titleInp.value=p.name||'';titleInp.addEventListener('input',function(){p.name=this.value;save();});
-    var del=document.createElement('div');del.className='pair-del';del.textContent='×';del.addEventListener('click',function(){ch.pairs=(ch.pairs||[]).filter(function(x){return x.id!==p.id;});save();renderPairs();});
-    hdr.appendChild(badge);hdr.appendChild(titleInp);hdr.appendChild(del);card.appendChild(hdr);
-    var grid=document.createElement('div');grid.className='pair-fields-grid';
-    var fields=[{k:'relation',l:'관계성',ph:'서로 어떤 관계인지...'},{k:'pairdesc',l:'설명',ph:'드관 설명, 세계관 공유 여부...'},{k:'partner',l:'상대방 드림주 이름',ph:'상대방 드림주 이름'},{k:'memo',l:'기타 메모',ph:'자유롭게...'}];
-    fields.forEach(function(fd){
-      var box=document.createElement('div');box.className='pair-field-box';
-      var lb=document.createElement('div');lb.className='pair-field-label';lb.textContent=fd.l;
-      var ta=document.createElement('textarea');ta.className='pair-field-input';ta.value=p[fd.k]||'';ta.rows=2;ta.placeholder=fd.ph;ta.addEventListener('input',function(){p[fd.k]=this.value;save();});
-      box.appendChild(lb);box.appendChild(ta);grid.appendChild(box);
-    });
-    card.appendChild(grid);list.appendChild(card);
-  });
-}
 
 // 드림 썰
 function renderDreamTags(){
@@ -1266,7 +1304,6 @@ function drawArrow(ctx,x1,y1,x2,y2,color,nodeR){
   var sy=y1+nodeR*Math.sin(angle);
   ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);
   ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
-  // 화살촉
   var hs=8;
   ctx.beginPath();
   ctx.moveTo(ex,ey);
@@ -1282,7 +1319,6 @@ function renderGraph(){
 
   var myRels=rels.filter(function(r){return r.from===curId||r.to===curId;});
 
-  // 같은 쌍 사이 관계 그룹핑
   var pairMap={};
   myRels.forEach(function(r){
     var a=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;
@@ -1299,7 +1335,6 @@ function renderGraph(){
     var rFrom=nodes[r.from]&&nodes[r.from].main?28:20;
     var rTo=nodes[r.to]&&nodes[r.to].main?28:20;
 
-    // 같은 쌍에 관계가 몇 개인지, 몇 번째인지
     var pairKey=r.from<r.to?r.from+'_'+r.to:r.to+'_'+r.from;
     var pairList=pairMap[pairKey]||[r];
     var pairIdx=pairList.findIndex(function(x){return x.id===r.id;});
@@ -1307,9 +1342,8 @@ function renderGraph(){
 
     var dx=n2.x-n1.x,dy=n2.y-n1.y;
     var dist=Math.sqrt(dx*dx+dy*dy)||1;
-    var nx=-dy/dist,ny=dx/dist; // 법선벡터
+    var nx=-dy/dist,ny=dx/dist;
 
-    // 여러 관계면 곡선 제어점을 옆으로 오프셋
     var offset=0;
     if(pairCount>1){
       offset=(pairIdx-(pairCount-1)/2)*28;
@@ -1322,17 +1356,15 @@ function renderGraph(){
     rctx.lineWidth=isExt?1:1.8;
 
     if(pairCount>1){
-      // 베지어 곡선
       rctx.beginPath();rctx.moveTo(n1.x,n1.y);
       rctx.quadraticCurveTo(cx,cy,n2.x,n2.y);
       rctx.stroke();
-      // 화살표 (곡선 끝 방향)
       if(!isExt&&dir!=='both'){
         var t=0.85;
         var ax=2*(1-t)*(cx-n1.x)+2*t*(n2.x-cx);
         var ay=2*(1-t)*(cy-n1.y)+2*t*(n2.y-cy);
         var angle=Math.atan2(ay,ax);
-        var ex,ey,sx2,sy2;
+        var ex,ey;
         if(dir==='from'){
           ex=n2.x-rTo*Math.cos(angle);ey=n2.y-rTo*Math.sin(angle);
           drawArrowHead(rctx,ex,ey,angle,colorSolid);
@@ -1343,7 +1375,6 @@ function renderGraph(){
         }
       }
     } else {
-      // 직선
       if(isExt||dir==='both'){
         rctx.beginPath();rctx.moveTo(n1.x,n1.y);rctx.lineTo(n2.x,n2.y);rctx.stroke();
       } else if(dir==='from'){
@@ -1354,7 +1385,6 @@ function renderGraph(){
     }
     rctx.restore();
 
-    // 라벨
     if(r.type){
       var lx=cx+(r.labelOffsetX||0);
       var ly=cy+(r.labelOffsetY||0);
@@ -1368,7 +1398,6 @@ function renderGraph(){
     }
   });
 
-  // 노드
   Object.values(nodes).forEach(function(n){
     var r=n.main?28:20;
     var ch=n.ext?null:getChar(n.id);
@@ -1409,7 +1438,6 @@ function updateRelLegend(){
 }
 canvas.addEventListener('mousedown',function(e){
   var rect=canvas.getBoundingClientRect();var mx=e.clientX-rect.left-panX,my=e.clientY-rect.top-panY;
-  // 라벨 히트 테스트
   var foundLabel=null;
   var myRels2=rels.filter(function(r){return r.from===curId||r.to===curId;});
   var pairMap2={};
@@ -1530,7 +1558,7 @@ document.getElementById('rel-add-ext-btn').addEventListener('click',function(){
   });
 });
 
-// 내보내기/불러오기 (캐릭터 단위)
+// 내보내기/불러오기
 document.getElementById('export-btn').addEventListener('click',function(){
   if(!curId){alert('먼저 내보낼 캐릭터를 선택해주세요!');return;}
   var ch=getChar(curId);if(!ch)return;
@@ -1547,12 +1575,10 @@ document.getElementById('import-file-input').addEventListener('change',function(
   reader.onload=function(ev){
     try{
       var data=JSON.parse(ev.target.result);
-      // 단일 캐릭터 형식 (version 2)
       if(data.char){
         var incoming=data.char;
         var existing=chars.find(function(c){return c.id===incoming.id;});
         if(existing){
-          // 같은 id가 이미 있으면 새 id 부여
           incoming.id=uid();
           (data.rels||[]).forEach(function(r){if(r.from===existing.id)r.from=incoming.id;if(r.to===existing.id)r.to=incoming.id;});
         }
@@ -1560,7 +1586,6 @@ document.getElementById('import-file-input').addEventListener('change',function(
         (data.rels||[]).forEach(function(r){rels.push(r);});
         save();renderList();selectChar(incoming.id);
         alert('"'+incoming.name+'" 캐릭터를 불러왔어요!');
-      // 전체 내보내기 형식 (version 1, 하위호환)
       } else if(data.chars){
         var added=0;
         (data.chars||[]).forEach(function(incoming){
@@ -1606,7 +1631,7 @@ document.getElementById('lb-close').addEventListener('click',function(){document
 document.getElementById('lb-download').addEventListener('click',function(){var img=document.getElementById('lb-img');downloadImg(img.src,'gallery_image');});
 document.getElementById('img-lightbox').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
 
-// ── 페어링 새 구조 ──
+// ── 페어링 ──
 var curPairId=null;
 function renderPairsNav(){
   var ch=getChar(curId);if(!ch)return;
@@ -1657,6 +1682,7 @@ function renderPairDetail(){
   });
   content_el.appendChild(fieldWrap);
 }
+
 // ── 스토리 ──
 var curDreamTag = "전체";
 var curStoryFolder = null;
@@ -1698,7 +1724,6 @@ function renderStoryList() {
   if (!stories.length) { list.innerHTML = '<div class="story-empty">+ 스토리 추가로 첫 스토리를 작성해보세요</div>'; return; }
   stories.forEach(function(s) {
     var card = document.createElement('div'); card.className = 'story-card';
-    // 삭제 버튼
     var del = document.createElement('div'); del.className = 'story-card-del'; del.textContent = '×';
     del.addEventListener('click', function() {
       customConfirm('이 스토리를 삭제할까요?', function() {
@@ -1706,7 +1731,6 @@ function renderStoryList() {
         save(); renderStoryList();
       });
     });
-    // 제목 + 장르 행
     var row = document.createElement('div'); row.className = 'story-card-row';
     var titleInp = document.createElement('input'); titleInp.className = 'story-card-title';
     titleInp.value = s.title || ''; titleInp.placeholder = '스토리 제목';
@@ -1715,11 +1739,9 @@ function renderStoryList() {
     genreInp.value = s.genre || ''; genreInp.placeholder = '장르 (판타지, 현대물...)';
     genreInp.addEventListener('input', function() { s.genre = this.value; save(); });
     row.appendChild(titleInp); row.appendChild(genreInp);
-    // 공동 등장 캐릭터
     var charsInp = document.createElement('input'); charsInp.className = 'story-card-chars';
     charsInp.value = s.chars || ''; charsInp.placeholder = '공동 등장 캐릭터';
     charsInp.addEventListener('input', function() { s.chars = this.value; save(); });
-    // 본문
     var body = document.createElement('textarea'); body.className = 'story-card-body';
     body.value = s.text || ''; body.rows = 8; body.placeholder = '스토리 내용을 자유롭게 작성하세요...';
     body.addEventListener('input', function() { s.text = this.value; save(); });
@@ -1756,10 +1778,8 @@ document.getElementById('story-add-btn').addEventListener('click', function() {
 function renderMemoTags(){
   var ch=getChar(curId);if(!ch)return;
   var toolbar=document.getElementById('memo-toolbar');if(!toolbar)return;
-  // 기존 동적 태그 제거 (전체 버튼 제외)
   Array.from(toolbar.querySelectorAll('.tag-pill:not(#memo-tag-all)')).forEach(function(el){el.remove();});
   var addBtn=document.getElementById('memo-add-btn');
-  // 태그 수집
   var tags=[];
   (ch.memos||[]).forEach(function(m){if(m.tag&&!tags.includes(m.tag))tags.push(m.tag);});
   tags.forEach(function(tag){
@@ -1771,7 +1791,6 @@ function renderMemoTags(){
     });
     toolbar.insertBefore(pill,addBtn);
   });
-  // 전체 버튼 클릭
   var allBtn=document.getElementById('memo-tag-all');
   if(allBtn){
     allBtn.classList.toggle('active',curMemoTag==='전체');
@@ -1871,30 +1890,43 @@ var ACCENT_COLORS=['#111111','#CC0000','#E07000','#C8A800','#228822','#0055CC','
 var appSettings={fontSize:14,font:'Noto Serif KR',textColor:'#2A2018'};
 try{var sv=localStorage.getItem('ca_settings');if(sv)appSettings=Object.assign({fontSize:14,font:'Noto Serif KR',textColor:'#2A2018'},JSON.parse(sv));}catch(e){}
 
+// ★ 수정 1: 글자 크기 applySettings - input[type=text]까지 명시적으로 포함
 function applySettings(){
-  // 글자 크기 - 모든 입력/텍스트 요소에 직접 적용
   var sz=appSettings.fontSize+'px';
   document.documentElement.style.setProperty('--app-font-size', sz);
   document.body.style.fontSize=sz;
 
-  // 폰트 적용
-  var fontStack=appSettings.font==='sans-serif'
+  var fontName=appSettings.font;
+  var fontStack=fontName==='sans-serif'
     ? "'Malgun Gothic','Apple SD Gothic Neo',sans-serif"
-    : appSettings.font==='Georgia'
+    : fontName==='Georgia'
       ? "Georgia,'Times New Roman',serif"
-      : "'Noto Serif KR',serif";
+      : (fontName==='Noto Serif KR'||!fontName)
+        ? "'Noto Serif KR',serif"
+        : '"'+fontName+'",serif';
   document.body.style.fontFamily=fontStack;
-  // 입력 요소들에도 폰트 적용
+
   var style=document.getElementById('app-dynamic-style');
   if(!style){style=document.createElement('style');style.id='app-dynamic-style';document.head.appendChild(style);}
+
+  // ★ 핵심: input[type=text], input:not([type]), select 등 모든 입력요소에 명시적 font-size
   style.textContent=
-    'body, input, textarea, select, button { font-size:'+sz+' !important; font-family:'+fontStack+' !important; }'+
-    '.field-input, .memo-card-text, .story-card-body, .story-text, .dream-card-text, .quote-text, .pair-field-input { font-size:'+sz+' !important; }'+
+    'body, input, input[type="text"], input:not([type]), textarea, select, button, [contenteditable] {'+
+    '  font-size:'+sz+' !important;'+
+    '  font-family:'+fontStack+' !important;'+
+    '}'+
+    '.field-input, .memo-card-text, .story-card-body, .story-text, .dream-card-text, .quote-text, .pair-field-input, .ce-field {'+
+    '  font-size:'+sz+' !important;'+
+    '}'+
+    // profile-name은 별도 큰 크기 유지
     '.profile-name-input { font-size:'+Math.round(appSettings.fontSize*1.7)+'px !important; }'+
-    'body, .field-input, .memo-card-text, textarea, p, td, li { color:'+appSettings.textColor+' !important; }'+
+    // 프로필 내 기본정보 input들도 포함
+    '#tab-profile input.field-input, #tab-profile .field-input {'+
+    '  font-size:'+sz+' !important;'+
+    '}'+
+    'body, .field-input, .memo-card-text, textarea, p, td, li, [contenteditable] { color:'+appSettings.textColor+' !important; }'+
     '.char-name, .tl-title-input, .story-card-title, .pair-detail-name-input { color:'+appSettings.textColor+' !important; }';
 
-  // UI 업데이트
   document.getElementById('sz-val').textContent=sz;
   if(document.getElementById('font-select'))document.getElementById('font-select').value=appSettings.font;
   document.getElementById('accent-picks').querySelectorAll('.accent-pick').forEach(function(el){
@@ -1916,10 +1948,41 @@ document.getElementById('font-select').addEventListener('change',function(){
   appSettings.font=this.value;applySettings();
 });
 
+// isInCE: contenteditable 영역인지 확인 (글자색과 툴바 공통 사용)
+function isInCE(node){
+  while(node){if(node.nodeType===1&&node.contentEditable==='true')return true;node=node.parentNode;}
+  return false;
+}
+
+// ── 글자색: mousedown에서 선택 스냅샷, click에서 적용 ──
 var accentPicks=document.getElementById('accent-picks');
+var _pendingColorRange=null;
+
 ACCENT_COLORS.forEach(function(c){
   var d=document.createElement('div');d.className='accent-pick';d.style.background=c;d.dataset.color=c;
-  d.addEventListener('click',function(){appSettings.textColor=c;applySettings();});
+  d.addEventListener('mousedown',function(e){
+    e.preventDefault();
+    var sel=window.getSelection();
+    _pendingColorRange=(sel&&!sel.isCollapsed&&sel.toString().trim()&&isInCE(sel.anchorNode))
+      ? sel.getRangeAt(0).cloneRange() : null;
+  });
+  d.addEventListener('click',function(){
+    if(_pendingColorRange){
+      var sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(_pendingColorRange);
+      var span=document.createElement('span');span.style.color=c;
+      var range=sel.getRangeAt(0);
+      try{range.surroundContents(span);}
+      catch(ex){span.appendChild(range.extractContents());range.insertNode(span);}
+      var node=span.parentNode;
+      while(node&&!(node.nodeType===1&&node.contentEditable==='true'))node=node.parentNode;
+      if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
+      sel.removeAllRanges();_pendingColorRange=null;
+    } else {
+      appSettings.textColor=c;applySettings();
+    }
+  });
   accentPicks.appendChild(d);
 });
 
@@ -1927,89 +1990,85 @@ applySettings();
 
 
 // ── contenteditable 헬퍼 ──
-function ceGet(el){
-  if(!el)return '';
-  if(el.tagName==='TEXTAREA')return el.value;
-  return el.innerHTML;
-}
-function ceSet(el,val){
-  if(!el)return;
-  if(el.tagName==='TEXTAREA'){el.value=val||'';return;}
-  el.innerHTML=val||'';
-}
-function ceOnInput(el,cb){
-  if(!el)return;
-  if(el.tagName==='TEXTAREA'){el.addEventListener('input',function(){cb(this.value);});return;}
-  el.addEventListener('input',function(){cb(this.innerHTML);});
-}
+function ceGet(el){if(!el)return '';if(el.tagName==='TEXTAREA')return el.value;return el.innerHTML;}
+function ceSet(el,val){if(!el)return;if(el.tagName==='TEXTAREA'){el.value=val||'';return;}el.innerHTML=val||'';}
+function ceOnInput(el,cb){if(!el)return;if(el.tagName==='TEXTAREA'){el.addEventListener('input',function(){cb(this.value);});return;}el.addEventListener('input',function(){cb(this.innerHTML);});}
 function makeCE(tag,cls,placeholder,rows){
-  // textarea 대신 contenteditable div 생성
   var d=document.createElement('div');
-  d.className=cls+' ce-field';
-  d.contentEditable='true';
-  d.dataset.placeholder=placeholder||'';
-  d.style.minHeight=(rows||3)*1.8+'em';
+  d.className=cls+' ce-field';d.contentEditable='true';
+  d.dataset.placeholder=placeholder||'';d.style.minHeight=(rows||3)*1.8+'em';
   return d;
 }
 
 // ── 볼드 툴바 ──
 var boldToolbar=document.getElementById('bold-toolbar');
 var savedRange=null;
-function showBoldToolbar(x,y){boldToolbar.style.left=x+'px';boldToolbar.style.top=(y-40)+'px';boldToolbar.classList.add('show');}
+
+function _updateBtnState(){
+  try{
+    document.getElementById('bt-bold').classList.toggle('active',document.queryCommandState('bold'));
+    document.getElementById('bt-italic').classList.toggle('active',document.queryCommandState('italic'));
+    document.getElementById('bt-underline').classList.toggle('active',document.queryCommandState('underline'));
+  }catch(ex){}
+}
+
+function showBoldToolbar(rect){
+  var x=rect.left+rect.width/2-50;
+  var y=rect.top-44;
+  if(y<8)y=rect.bottom+6;
+  x=Math.max(4,Math.min(x,window.innerWidth-110));
+  boldToolbar.style.left=x+'px';
+  boldToolbar.style.top=y+'px';
+  boldToolbar.classList.add('show');
+  _updateBtnState();
+}
 function hideBoldToolbar(){boldToolbar.classList.remove('show');}
 
-document.addEventListener('mouseup',function(e){
-  if(boldToolbar.contains(e.target))return;
-  var sel=window.getSelection();
-  if(!sel||sel.isCollapsed||!sel.toString().trim()){hideBoldToolbar();return;}
-  // contenteditable 안에서만 툴바 표시
-  var anchor=sel.anchorNode;
-  var inCE=false;
-  var node=anchor;
-  while(node){if(node.contentEditable==='true'){inCE=true;break;}node=node.parentNode;}
-  if(!inCE){hideBoldToolbar();return;}
-  savedRange=sel.getRangeAt(0).cloneRange();
-  var rect=sel.getRangeAt(0).getBoundingClientRect();
-  showBoldToolbar(rect.left+rect.width/2-40,rect.top+window.scrollY);
-});
+// 툴바 자체 mousedown: 선택 해제 방지만
+boldToolbar.addEventListener('mousedown',function(e){e.preventDefault();});
+
+// mousedown: 툴바 외부이면 드래그 후 판단하기 위해 플래그만
+var _hideToolbarPending=false;
 document.addEventListener('mousedown',function(e){
-  if(!boldToolbar.contains(e.target))hideBoldToolbar();
+  _hideToolbarPending=!boldToolbar.contains(e.target);
 });
 
-function wrapSelection(tagName){
-  var range=savedRange;
-  if(!range)return;
-  // 이미 같은 태그로 감싸져 있으면 해제
+// mouseup: 선택 결과로 show/hide 결정
+document.addEventListener('mouseup',function(e){
+  if(boldToolbar.contains(e.target))return;
+  setTimeout(function(){
+    var sel=window.getSelection();
+    if(!sel||sel.isCollapsed||!sel.toString().trim()){
+      if(_hideToolbarPending){hideBoldToolbar();savedRange=null;}
+      return;
+    }
+    if(!isInCE(sel.anchorNode)){hideBoldToolbar();savedRange=null;return;}
+    savedRange=sel.getRangeAt(0).cloneRange();
+    showBoldToolbar(sel.getRangeAt(0).getBoundingClientRect());
+  },0);
+});
+
+function applyFormat(cmd){
+  if(!savedRange)return;
   var sel=window.getSelection();
   sel.removeAllRanges();
-  sel.addRange(range);
-  var selectedText=range.toString();
-  if(!selectedText)return;
-  // 부모가 같은 태그면 unwrap
-  var parent=range.commonAncestorContainer;
-  if(parent.nodeType===3)parent=parent.parentNode;
-  if(parent.tagName&&parent.tagName.toLowerCase()===tagName.toLowerCase()){
-    var frag=document.createDocumentFragment();
-    while(parent.firstChild)frag.appendChild(parent.firstChild);
-    parent.parentNode.replaceChild(frag,parent);
-  } else {
-    // wrap
-    var el=document.createElement(tagName);
-    try{range.surroundContents(el);}
-    catch(e){
-      el.appendChild(range.extractContents());
-      range.insertNode(el);
-    }
-  }
-  // 변경 이벤트
-  var node=range.commonAncestorContainer;
-  while(node&&node.contentEditable!=='true')node=node.parentNode;
+  sel.addRange(savedRange);
+  document.execCommand(cmd);
+  var node=sel.anchorNode;
+  while(node&&!(node.nodeType===1&&node.contentEditable==='true'))node=node.parentNode;
   if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
-  hideBoldToolbar();
+  if(sel.rangeCount>0)savedRange=sel.getRangeAt(0).cloneRange();
+  _updateBtnState();
+  // 툴바 위치 갱신
+  if(sel.rangeCount>0){
+    var r=sel.getRangeAt(0).getBoundingClientRect();
+    if(r.width>0)showBoldToolbar(r);
+  }
 }
-document.getElementById('bt-bold').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('b');});
-document.getElementById('bt-italic').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('i');});
-document.getElementById('bt-underline').addEventListener('mousedown',function(e){e.preventDefault();wrapSelection('u');});
+
+document.getElementById('bt-bold').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('bold');});
+document.getElementById('bt-italic').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('italic');});
+document.getElementById('bt-underline').addEventListener('mousedown',function(e){e.preventDefault();applyFormat('underline');});
 
 
 // 폰트 파일 업로드
@@ -2061,7 +2120,63 @@ document.getElementById('font-file-input').addEventListener('change',function(e)
 document.getElementById('search').addEventListener('input',renderList);
 renderList();
 if(chars.length>0)selectChar(chars[0].id);
+
+// ── 모바일 전용 ──
+(function(){
+  function isMobile(){return window.innerWidth<=768;}
+
+  function setupMobileUI(){
+    if(!isMobile())return;
+    var bar=document.getElementById('io-bar');
+    if(!bar||bar.querySelector('.m-add-btn'))return;
+    var btn=document.createElement('button');
+    btn.className='io-btn m-add-btn';
+    btn.textContent='+ 캐릭터';
+    btn.style.cssText='color:var(--gold);border-color:var(--gold);font-weight:600;flex:0 0 auto;';
+    btn.addEventListener('click',function(){document.getElementById('add-btn').click();});
+    bar.insertBefore(btn,bar.firstChild);
+  }
+
+  document.addEventListener('selectionchange',function(){
+    if(!isMobile())return;
+    setTimeout(function(){
+      var sel=window.getSelection();
+      if(!sel||sel.isCollapsed||!sel.toString().trim())return;
+      if(!isInCE(sel.anchorNode))return;
+      savedRange=sel.getRangeAt(0).cloneRange();
+      var rect=sel.getRangeAt(0).getBoundingClientRect();
+      if(!rect||rect.width===0)return;
+      showBoldToolbar(rect);
+    },120);
+  });
+
+  ['bt-bold','bt-italic','bt-underline'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.addEventListener('touchstart',function(e){
+      e.preventDefault();
+      var cmd=id==='bt-bold'?'bold':id==='bt-italic'?'italic':'underline';
+      applyFormat(cmd);
+    },{passive:false});
+  });
+
+  var mc=document.getElementById('main-content');
+  var tx=0,ty=0;
+  if(mc){
+    mc.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+    mc.addEventListener('touchend',function(e){
+      if(!isMobile())return;
+      var dx=e.changedTouches[0].clientX-tx;
+      var dy=e.changedTouches[0].clientY-ty;
+      if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*0.7)return;
+      var tabs=Array.from(document.querySelectorAll('.mtab'));
+      var ai=tabs.findIndex(function(t){return t.classList.contains('active');});
+      var ni=dx<0?ai+1:ai-1;
+      if(ni>=0&&ni<tabs.length)tabs[ni].click();
+    },{passive:true});
+  }
+
+  setupMobileUI();
+  window.addEventListener('resize',setupMobileUI);
 })();
-</script>
-</body>
-</html>
+
+})();
