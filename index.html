@@ -2026,31 +2026,34 @@ function applyFmt(tagName){
   }
   if(!range||!range.toString().trim())return;
 
+  // CE 루트 찾기
+  var ceRoot=range.startContainer;
+  if(ceRoot.nodeType===3)ceRoot=ceRoot.parentNode;
+  while(ceRoot&&ceRoot.getAttribute&&ceRoot.getAttribute('contenteditable')!=='true')ceRoot=ceRoot.parentNode;
+
   // 이미 같은 태그로 감싸진 경우 해제
-  var ancestor=range.commonAncestorContainer;
-  if(ancestor.nodeType===3)ancestor=ancestor.parentNode;
-  var wrap=ancestor;
-  while(wrap&&wrap.getAttribute&&wrap.getAttribute('contenteditable')!=='true'){
-    if(wrap.tagName&&wrap.tagName.toLowerCase()===tagName){
-      var frag=document.createDocumentFragment();
-      while(wrap.firstChild)frag.appendChild(wrap.firstChild);
-      wrap.parentNode.replaceChild(frag,wrap);
-      // 저장 트리거
-      var p=frag.parentNode;
-      while(p&&p.getAttribute&&p.getAttribute('contenteditable')!=='true')p=p.parentNode;
-      if(p)p.dispatchEvent(new Event('input',{bubbles:true}));
-      _savedFmtRange=null;
-      return;
-    }
-    wrap=wrap.parentNode;
+  // startContainer에서 위로 올라가며 확인 (부분 선택도 정확히 감지)
+  var node=range.startContainer;
+  if(node.nodeType===3)node=node.parentNode;
+  var existing=null;
+  while(node&&node.getAttribute&&node.getAttribute('contenteditable')!=='true'){
+    if(node.tagName&&node.tagName.toLowerCase()===tagName){existing=node;break;}
+    node=node.parentNode;
   }
+  if(existing){
+    var frag=document.createDocumentFragment();
+    while(existing.firstChild)frag.appendChild(existing.firstChild);
+    existing.parentNode.replaceChild(frag,existing);
+    if(ceRoot)ceRoot.dispatchEvent(new Event('input',{bubbles:true}));
+    _savedFmtRange=null;
+    return;
+  }
+
   // 감싸기
   var el=document.createElement(tagName);
   try{range.surroundContents(el);}
   catch(ex){el.appendChild(range.extractContents());range.insertNode(el);}
-  var node=el.parentNode;
-  while(node&&node.getAttribute&&node.getAttribute('contenteditable')!=='true')node=node.parentNode;
-  if(node)node.dispatchEvent(new Event('input',{bubbles:true}));
+  if(ceRoot)ceRoot.dispatchEvent(new Event('input',{bubbles:true}));
   _savedFmtRange=null;
 }
 
